@@ -1,0 +1,36 @@
+next step 
+
+Phase 2.2 :
+
+1. Build the Homepage structure including the navigation bar and footer.✅ (navbar.jsx dan footer.jsx)
+2. Populate the Homepage with placeholder content and sections.✅ (Hero section)
+3. Build and populate the other page structure.✅ (Dashboard siswa dan guru sudah selesai yang tersisa hanya bagian untuk halaman materi)
+
+Phase 3.3 
+
+1. Initialize the backend project environment and define the folder architecture.
+2. Build the database schemas for the core features identified in Phase 1.
+3. Create basic CRUD (Create, Read, Update, Delete) API endpoints for the main resource.
+4. Seed the database with initial mock data to prepare for frontend integration.
+
+
+karena waktu tersisa dua minggu, saya harus melakukan penyempitan scope untuk sementara:
+
+yang wajib ada : 
+
+1. Login siswa dan guru 
+2. Guru bisa tambah soal
+3. siswa bisa kerjakan soal 
+4. Guru bisa lihat siapa yang sudah mengerjakan
+
+yang tertunda : 
+1. Bridge gate otomatis
+2. Node logic berantai 
+3. progress tracking detail
+4. Dashboard analytic
+
+
+
+Note bagus:
+1. biasanya kan di button itu ada tanda panah kecil untuk ui navigasi, bisa tambahkan &rarr; untuk panah kecil yang mengarah kekanan dan &larr untuk panah kecil yang mengarah kekiri/ kembali.
+
