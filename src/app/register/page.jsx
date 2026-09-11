@@ -1,13 +1,23 @@
 "use client";
 
 import Navbar from "@/app/components/layout/Navbar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/authcontext";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, register: registerUser, isAuthenticated } = useAuth();
   const [role, setRole] = useState("siswa");
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      router.replace(
+        user.role === "guru" ? "/dashboard/guru" : "/dashboard/siswa",
+      );
+    }
+  }, [isAuthenticated, user, router]);
 
   const {
     register,
@@ -16,17 +26,23 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
+      nama: "",
       email: "",
       password: "",
       confirmPassword: "",
     },
   });
 
-  // Memantau nilai password untuk validasi konfirmasi password
   const password = watch("password");
 
   const onSubmit = (data) => {
-    console.log("Data Register:", { ...data, role });
+    registerUser({
+      name: data.nama,
+      email: data.email,
+      password: data.password,
+      role,
+    });
+
     if (role === "guru") {
       router.push("/dashboard/guru");
     } else {
@@ -47,7 +63,7 @@ export default function RegisterPage() {
             <h2 className="text-sm font-bold text-brand">Daftar Akun</h2>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">  
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
                 Daftar Sebagai
@@ -78,7 +94,37 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Email Field */}
+            <div>
+              <label
+                htmlFor="nama-lengkap"
+                className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2"
+              >
+                Nama Lengkap
+              </label>
+              <input
+                id="nama-lengkap"
+                type="text"
+                placeholder="Masukkan nama lengkap"
+                {...register("nama", {
+                  required: "Nama lengkap wajib diisi",
+                  minLength: {
+                    value: 2,
+                    message: "Nama minimal 2 karakter",
+                  },
+                })}
+                className={`w-full rounded-xl border bg-base p-3.5 text-sm text-primary placeholder:text-muted focus:outline-none transition-all ${
+                  errors.nama
+                    ? "border-av-red focus:border-av-red"
+                    : "border-line focus:border-brand focus:ring-1 focus:ring-brand"
+                }`}
+              />
+              {errors.nama && (
+                <p className="text-xs text-av-red mt-1">
+                  {errors.nama.message}
+                </p>
+              )}
+            </div>
+
             <div>
               <label
                 htmlFor="daftar-email"
@@ -104,11 +150,12 @@ export default function RegisterPage() {
                 }`}
               />
               {errors.email && (
-                <p className="text-xs text-av-red mt-1">{errors.email.message}</p>
+                <p className="text-xs text-av-red mt-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
-            {/* Password Field */}
             <div>
               <label
                 htmlFor="password-input"
@@ -134,11 +181,12 @@ export default function RegisterPage() {
                 }`}
               />
               {errors.password && (
-                <p className="text-xs text-av-red mt-1">{errors.password.message}</p>
+                <p className="text-xs text-av-red mt-1">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
-            {/* Confirm Password Field */}
             <div>
               <label
                 htmlFor="password-repeat"
@@ -162,7 +210,9 @@ export default function RegisterPage() {
                 }`}
               />
               {errors.confirmPassword && (
-                <p className="text-xs text-av-red mt-1">{errors.confirmPassword.message}</p>
+                <p className="text-xs text-av-red mt-1">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
 

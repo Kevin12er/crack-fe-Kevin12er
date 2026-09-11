@@ -34,3 +34,66 @@ yang tertunda :
 Note bagus:
 1. biasanya kan di button itu ada tanda panah kecil untuk ui navigasi, bisa tambahkan &rarr; untuk panah kecil yang mengarah kekanan dan &larr untuk panah kecil yang mengarah kekiri/ kembali.
 
+
+
+Yang masih kurang paling penting:
+
+-Backend dan database
+-Real auth + role-based access control
+-API login/register
+-CRUD soal
+-Simpan jawaban siswa
+-Skor dan status pengerjaan
+-Protected routes sesuai role guru/siswa
+-Data siswa kelas/assignment
+-Timer ujian, history pengerjaan, review soal
+-Validasi, error handling, security
+
+
+flow bisnis: 
+
+Guru:
+Login -> buat soal/bank soal -> assign soal ke kelas -> lihat hasil ujian -> lihat nilai dan rerata 
+
+siswa: 
+Login -> lihat materi -> kerjakan soal -> submit jawaban -> lihat hasil -> progress
+
+Backend API yang harus siap
+Contoh endpoint:
+POST /api/auth/register
+POST /api/auth/login
+GET /api/me
+GET /api/guru/soal
+POST /api/guru/soal
+GET /api/siswa/soal
+POST /api/siswa/submit
+GET /api/guru/hasil
+GET /api/siswa/histori
+Validasi dan keamanan
+validasi input
+CORS
+rate limit
+CSRF kalau pakai cookie
+authorization per role
+audit log
+error handling konsisten
+pagination & filtering data
+Database
+Kalau mau serius, pilih:
+PostgreSQL kalau data dan query kompleks
+MySQL juga oke
+MongoDB hanya kalau struktur data sangat dinamis
+Deployment-ready
+env config
+logging
+structured API response
+error codes konsisten
+CI/CD
+test basic: auth, CRUD soal, submit ujian, hasil nilai
+Frontend harus diubah dari mock menjadi konsumsi API
+Saat ini banyak tombol/submit masih cuma console.log dan router push. Itu artinya frontend belum terhubung ke backend. Untuk production:
+login fetch ke API
+register simpan ke DB
+soal diambil dari API
+hasil siswa disimpan ke backend
+data dashboard dinamis

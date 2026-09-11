@@ -1,12 +1,31 @@
-"use client"; 
+"use client";
 
 import Navbar from "@/app/components/layout/Navbar";
 import FormTambahSoal from "./components/FormTambahSoal";
 import TabelHasilSiswa from "./components/TabelHasilSiswa";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/authcontext";
 
 export default function DashboardGuruPage() {
-  // Mock State untuk Bank Soal
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+
+    if (user?.role !== "guru") {
+      router.replace("/dashboard/siswa");
+    }
+  }, [isAuthenticated, user, router]);
+
+  if (!isAuthenticated || user?.role !== "guru") {
+    return null;
+  }
+
   const [daftarSoal, setDaftarSoal] = useState([
     {
       id: 1,
@@ -16,7 +35,6 @@ export default function DashboardGuruPage() {
     },
   ]);
 
-  // Mock State untuk Hasil Pengerjaan Siswa
   const [dataHasil] = useState([
     {
       id: 1,
@@ -34,9 +52,8 @@ export default function DashboardGuruPage() {
     },
   ]);
 
-  // Handler ketika Guru menambah soal baru via Form
   const handleTambahSoal = (soalBaru) => {
-    setDaftarSoal([soalBaru, ...daftarSoal]);
+    setDaftarSoal((prev) => [soalBaru, ...prev]);
   };
 
   return (
@@ -87,7 +104,7 @@ export default function DashboardGuruPage() {
                 {dataHasil.length > 0
                   ? Math.round(
                       dataHasil.reduce((acc, curr) => acc + curr.nilai, 0) /
-                        dataHasil.length
+                        dataHasil.length,
                     )
                   : 0}
               </h3>

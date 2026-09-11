@@ -1,13 +1,23 @@
 "use client";
 
 import Navbar from "@/app/components/layout/Navbar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/authcontext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { user, login, isAuthenticated } = useAuth();
   const [role, setRole] = useState("siswa");
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      router.replace(
+        user.role === "guru" ? "/dashboard/guru" : "/dashboard/siswa",
+      );
+    }
+  }, [isAuthenticated, user, router]);
 
   const {
     register,
@@ -21,8 +31,14 @@ export default function LoginPage() {
   });
 
   const onSubmit = (data) => {
-    console.log("Login data:", { ...data, role });
-    if (role === "guru") {
+    const sessionUser = login({
+      email: data.email,
+      password: data.password,
+      role,
+      name: data.email.split("@")[0],
+    });
+
+    if (sessionUser.role === "guru") {
       router.push("/dashboard/guru");
     } else {
       router.push("/dashboard/siswa");
@@ -98,7 +114,9 @@ export default function LoginPage() {
                 }`}
               />
               {errors.email && (
-                <p className="text-xs text-av-red mt-1">{errors.email.message}</p>
+                <p className="text-xs text-av-red mt-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -125,7 +143,9 @@ export default function LoginPage() {
                 }`}
               />
               {errors.password && (
-                <p className="text-xs text-av-red mt-1">{errors.password.message}</p>
+                <p className="text-xs text-av-red mt-1">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
