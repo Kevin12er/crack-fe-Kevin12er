@@ -138,7 +138,7 @@ export default function Navbar() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 hidden md:flex">
+          <div className="hidden md:flex items-center gap-3">
             <Link
               href="/login"
               className="font-jakarta font-bold text-sm px-4 py-2 rounded-xl border border-line-strong text-muted hover:text-white hover:border-white transition-all duration-200"
