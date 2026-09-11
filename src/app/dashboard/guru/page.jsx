@@ -132,7 +132,7 @@ export default function DashboardGuruPage() {
                       key={item.id}
                       className="p-3 bg-base border border-line rounded-xl text-xs flex justify-between items-center"
                     >
-                      <span className="font-medium truncate max-w-[250px]">
+                      <span className="font-medium truncate max-w-62.5">
                         {idx + 1}. {item.pertanyaan}
                       </span>
                       <span className="text-brand font-semibold px-2 py-0.5 bg-brand-soft border border-brand-ring rounded">
