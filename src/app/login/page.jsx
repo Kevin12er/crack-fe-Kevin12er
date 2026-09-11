@@ -49,7 +49,7 @@ export default function LoginPage() {
     <>
       <Navbar />
       <div className="flex min-h-screen items-center justify-center bg-base text-primary p-4 font-jakarta">
-        <div className="absolute w-[600px] h-[600px] rounded-full pointer-events-none top-[-150px] left-1/2 -translate-x-1/2 z-0 bg-[radial-gradient(circle,var(--color-brand-soft)_0%,transparent_70%)]" />
+        <div className="absolute w-150 h-150 rounded-full pointer-events-none -top-37.5 left-1/2 -translate-x-1/2 z-0 bg-[radial-gradient(circle,var(--color-brand-soft)_0%,transparent_70%)]" />
         <div className="w-full max-w-md rounded-2xl bg-surface p-8 shadow-2xl border border-line relative z-10">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-extrabold tracking-tight text-brand">
