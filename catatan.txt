@@ -97,3 +97,11 @@ register simpan ke DB
 soal diambil dari API
 hasil siswa disimpan ke backend
 data dashboard dinamis
+
+
+
+ 4 Perintah Keren yang Wajib Anda Coba SekarangSilakan buka salah satu file kode Anda, blok beberapa baris kode, lalu ketik perintah berikut di panel chat:
+ /explain — Meminta Copilot menjelaskan cara kerja kode tersebut dengan bahasa yang mudah dipahami.
+ /fix — Menyuruh Copilot mencari tahu jika ada bagian yang bug, error, atau bisa bikin program Anda macet.
+ /tests — Membuatkan unit test (kode penguji) otomatis untuk fungsi yang baru saja Anda buat.
+ /help — Menampilkan bantuan dan tutorial langsung dari tim GitHub tentang apa saja yang bisa dilakukan oleh Copilot Chat.

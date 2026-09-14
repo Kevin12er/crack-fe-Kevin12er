@@ -15,8 +15,10 @@ export default function Sidebar() {
   return (
     <>
       <button
-        className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-surface border border-line rounded-xl flex items-center justify-center"
+        className="md:hidden fixed top-3 left-3 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface"
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-label={isOpen ? "Tutup sidebar" : "Buka sidebar"}
       >
         <div className="flex flex-col gap-1.5">
           <span
@@ -41,9 +43,7 @@ export default function Sidebar() {
       <aside
         className={`
         fixed md:static top-0 left-0 z-40
-        flex font-jakarta flex-col font-bold
-        w-70 min-h-screen
-        shadow-lg shadow-brand bg-surface border-r border-line rounded-xl p-8
+        flex w-70 min-h-screen flex-col border-r border-line bg-surface p-6 font-jakarta font-bold shadow-lg shadow-brand md:p-8 md:rounded-none rounded-r-2xl
         transition-transform duration-300
         ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}
@@ -90,7 +90,7 @@ export default function Sidebar() {
 
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-center gap-2 p-3 bg-base rounded-xl border border-line">
-            <div className="w-8 h-8 rounded-full bg-avatar-blue flex items-center justify-center text-xs font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-av-blue text-xs font-bold">
               {user?.name?.slice(0, 2).toUpperCase() || "ST"}
             </div>
             <div>

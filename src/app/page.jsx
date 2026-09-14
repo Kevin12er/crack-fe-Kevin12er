@@ -1,50 +1,64 @@
 "use client";
-import Link from 'next/link';
-import Marquee from './components/ui/Marquee';
-import Card from './components/ui/Card';
-import Footer from './components/layout/Footer';
-import Navbar from './components/layout/Navbar';
+import Link from "next/link";
+import Marquee from "./components/ui/Marquee";
+import Card from "./components/ui/Card";
+import Footer from "./components/layout/Footer";
+import Navbar from "./components/layout/Navbar";
 
 export default function HeroPage() {
   return (
+    <main className="bg-base overflow-x-clip">
+      <Navbar />
+      <section className="relative bg-base px-4 py-12 text-white md:px-8 lg:px-12">
+        {/* Green middle gradient */}
+        <div className="pointer-events-none absolute left-1/2 -top-45 z-0 h-105 w-105 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.12)_0%,transparent_70%)] md:h-150 md:w-150" />
 
-    <main className="bg-base overflow-hidden">
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-center gap-8 py-10 md:min-h-[70vh]">
+          <span className="inline-flex w-fit rounded-2xl border border-brand bg-brand/20 px-6 py-2 text-center font-jakarta text-sm font-bold text-brand backdrop-blur-md md:text-base">
+            Platform belajar generasi baru
+          </span>
 
-    <Navbar />
-    <section className="min-h-screen bg-base text-white p-12 flex flex-col md:flex-row relative ">
-      
-      {/*Green Middle Gradient*/}
-      <div className="absolute w-[600px] h-[600px] rounded-full pointer-events-none top-[-150px] left-1/2 -translate-x-1/2 z-0 bg-[radial-gradient(circle,rgba(16,185,129,0.12)_0%,transparent_70%)]"/>
-
-      <div className="z-10 mt-6">
-                <span className="inline-block w-100 mt-12 md:mt-16  text-center font-jakarta border text-[#10b981] font-bold border-[#10b981] bg-[#10b981]/20 backdrop-blur-md rounded-2xl py-2 px-8 z-10">
-                    Platform belajar generasi baru
-                </span>
-        <div className="flex flex-col mt-4">
-                <span className="inline-block text-7xl font-jakarta font-bold">Kuasai Matematika.</span>
-                <span className="inline-block text-5xl font-jakarta font-bold text-brand">Bertahap dan menyenangkan.</span>
-                <span className="inline-block text-5xl font-jakarta italic font-bold text-ghost">Selesaikan tantangannya</span>
-                <p className="w-150 mt-4 hidden md:block text-sm md:text-xl font-jakarta text-muted">Platform belajar Matematika yang didesign untuk mempermudah guru dalam mentracking perkembangan muridnya, ambil kendali atas progress siswa secara real time.</p>
-                <Link className="bg-brand font-jakarta py-4 px-6 mt-6 rounded-2xl w-40 text-center font-bold transition translate active:scale-95 hover:scale-105" href="/login">Mulai gratis</Link>
-        </div>
+          <div className="flex flex-col gap-3">
+            <span className="inline-block font-jakarta text-4xl font-bold leading-tight sm:text-5xl md:text-6xl lg:text-7xl">
+              Kuasai Matematika.
+            </span>
+            <span className="inline-block font-jakarta text-3xl font-bold leading-tight text-brand sm:text-4xl md:text-5xl">
+              Bertahap dan menyenangkan.
+            </span>
+            <span className="inline-block font-jakarta text-3xl font-bold italic leading-tight text-ghost sm:text-4xl md:text-5xl">
+              Selesaikan tantangannya
+            </span>
+            <p className="mt-2 max-w-2xl font-jakarta text-sm text-muted sm:text-base md:text-lg">
+              Platform belajar Matematika yang didesign untuk mempermudah guru
+              dalam mentracking perkembangan muridnya, ambil kendali atas
+              progress siswa secara real time.
+            </p>
+            <Link
+              className="mt-5 w-full rounded-2xl bg-brand px-6 py-3 text-center font-jakarta font-bold text-base transition active:scale-95 hover:bg-brand-hover sm:w-fit"
+              href="/login"
+            >
+              Mulai gratis
+            </Link>
+          </div>
         </div>
       </section>
 
-        {/*Marquee*/}
-        <Marquee />
-        {/*Marquee*/} 
-
-
-
-        <section className="px-12 py-16">
-          <p className="text-brand font-jakarta font-bold text-sm uppercase tracking-widest mb-2">Kenapa LearnBridge</p>
-          <h2 className="text-primary font-jakarta font-bold text-3xl mb-8">Semua yang kamu butuhkan.</h2>
+      {/*Marquee*/}
+      <Marquee />
+      {/*Marquee*/}
+      <section className="px-4 py-16 md:px-8 lg:px-12">
+        <div className="mx-auto w-full max-w-6xl">
+          <p className="mb-2 font-jakarta text-sm font-bold uppercase tracking-widest text-brand">
+            Kenapa LearnBridge
+          </p>
+          <h2 className="mb-8 font-jakarta text-2xl font-bold text-primary md:text-3xl">
+            Semua yang kamu butuhkan.
+          </h2>
           <Card />
-        </section>
-        
-      
-    
-        <Footer />
+        </div>
+      </section>
+
+      <Footer />
     </main>
   );
 }
