@@ -28,7 +28,7 @@ export default function SiswaDashboard() {
   }
 
   return (
-    <div>
+    <div className="space-y-4 pb-6 md:space-y-6 md:pb-8">
       <Greetings />
       <StatCards />
       <ContinueCard />

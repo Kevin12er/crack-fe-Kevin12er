@@ -44,8 +44,11 @@ export default function HasilUjianGuruPage() {
   ]);
 
   const hasilFiltered = dataHasil.filter((item) => {
-    const matchNama = item.nama.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchMapel = selectedMapel === "Semua" || item.mapel === selectedMapel;
+    const matchNama = item.nama
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchMapel =
+      selectedMapel === "Semua" || item.mapel === selectedMapel;
     return matchNama && matchMapel;
   });
 
@@ -69,8 +72,10 @@ export default function HasilUjianGuruPage() {
               </p>
             </div>
             <button
-              onClick={() => alert("Fitur unduh laporan PDF/Excel siap diintegrasikan!")}
-              className="px-4 py-2 text-xs font-semibold bg-brand text-base rounded-xl hover:bg-brand-hover transition-colors w-fit cursor-pointer shadow-md"
+              onClick={() =>
+                alert("Fitur unduh laporan PDF/Excel siap diintegrasikan!")
+              }
+              className="w-fit cursor-pointer rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-primary shadow-md transition-colors hover:bg-brand-hover"
             >
               Export Laporan
             </button>
@@ -144,8 +149,13 @@ export default function HasilUjianGuruPage() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {hasilFiltered.map((item) => (
-                    <tr key={item.id} className="hover:bg-base/50 transition-colors">
-                      <td className="p-4 font-semibold text-primary">{item.nama}</td>
+                    <tr
+                      key={item.id}
+                      className="hover:bg-base/50 transition-colors"
+                    >
+                      <td className="p-4 font-semibold text-primary">
+                        {item.nama}
+                      </td>
                       <td className="p-4 text-secondary">{item.kelas}</td>
                       <td className="p-4 text-secondary">{item.mapel}</td>
                       <td className="p-4 text-xs text-muted">{item.tanggal}</td>
@@ -166,7 +176,10 @@ export default function HasilUjianGuruPage() {
 
                   {hasilFiltered.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="text-center p-8 text-xs text-muted">
+                      <td
+                        colSpan={6}
+                        className="text-center p-8 text-xs text-muted"
+                      >
                         Tidak ada data hasil siswa yang cocok.
                       </td>
                     </tr>

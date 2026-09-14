@@ -28,7 +28,8 @@ export default function KelolaSoalPage() {
     },
     {
       id: 3,
-      pertanyaan: "Sebutkan perintah SQL untuk mengambil semua kolom dari tabel 'users'!",
+      pertanyaan:
+        "Sebutkan perintah SQL untuk mengambil semua kolom dari tabel 'users'!",
       mapel: "Basis Data",
       tipe: "Pilihan Ganda",
       kunci: "SELECT * FROM users;",
@@ -46,15 +47,18 @@ export default function KelolaSoalPage() {
     e.preventDefault();
     setDaftarSoal(
       daftarSoal.map((soal) =>
-        soal.id === editingSoal.id ? editingSoal : soal
-      )
+        soal.id === editingSoal.id ? editingSoal : soal,
+      ),
     );
     setEditingSoal(null); // Tutup modal setelah simpan
   };
 
   const soalFiltered = daftarSoal.filter((soal) => {
-    const matchSearch = soal.pertanyaan.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchMapel = selectedMapel === "Semua" || soal.mapel === selectedMapel;
+    const matchSearch = soal.pertanyaan
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchMapel =
+      selectedMapel === "Semua" || soal.mapel === selectedMapel;
     return matchSearch && matchMapel;
   });
 
@@ -63,14 +67,12 @@ export default function KelolaSoalPage() {
       <Navbar />
       <div className="min-h-screen bg-base text-primary font-jakarta p-4 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
-
-        <Link
-          href="/dashboard/guru"
-          className="text-xs mt-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"
-        >
-         &larr; Kembali ke dashboard 
-        </Link>
-
+          <Link
+            href="/dashboard/guru"
+            className="text-xs mt-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"
+          >
+            &larr; Kembali ke dashboard
+          </Link>
 
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-6">
@@ -131,7 +133,8 @@ export default function KelolaSoalPage() {
                     {index + 1}. {item.pertanyaan}
                   </h3>
                   <p className="text-xs text-secondary">
-                    <strong className="text-primary">Kunci:</strong> {item.kunci}
+                    <strong className="text-primary">Kunci:</strong>{" "}
+                    {item.kunci}
                   </p>
                 </div>
 
@@ -225,7 +228,7 @@ export default function KelolaSoalPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold bg-brand text-base rounded-xl hover:bg-brand-hover"
+                  className="rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-primary hover:bg-brand-hover"
                 >
                   Simpan Perubahan
                 </button>

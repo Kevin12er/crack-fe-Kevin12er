@@ -74,7 +74,7 @@ export default function RegisterPage() {
                   onClick={() => setRole("siswa")}
                   className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     role === "siswa"
-                      ? "bg-brand text-base font-bold shadow-md"
+                      ? "bg-brand text-primary font-bold shadow-md"
                       : "text-secondary hover:text-primary"
                   }`}
                 >
@@ -85,7 +85,7 @@ export default function RegisterPage() {
                   onClick={() => setRole("guru")}
                   className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     role === "guru"
-                      ? "bg-brand text-base font-bold shadow-md"
+                      ? "bg-brand text-primary font-bold shadow-md"
                       : "text-secondary hover:text-primary"
                   }`}
                 >
@@ -219,7 +219,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full cursor-pointer rounded-xl bg-brand py-3.5 font-semibold text-sm text-base hover:bg-brand-hover active:scale-[0.98] transition-all shadow-lg mt-4 disabled:opacity-50"
+              className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-50"
             >
               Daftar Sebagai {role === "guru" ? "Guru" : "Siswa"}
             </button>

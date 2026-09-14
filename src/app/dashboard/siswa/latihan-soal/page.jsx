@@ -108,7 +108,7 @@ export default function LatihanSoalSiswaPage() {
                     className={`w-full py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                       item.status === "Selesai"
                         ? "bg-base text-muted border border-line cursor-not-allowed"
-                        : "bg-brand text-base hover:bg-brand-hover"
+                        : "bg-brand text-primary hover:bg-brand-hover"
                     }`}
                   >
                     {item.status === "Selesai"
@@ -180,7 +180,7 @@ export default function LatihanSoalSiswaPage() {
             <div className="flex justify-end gap-3 border-t border-line pt-4">
               <button
                 onClick={handleSelesaiUjian}
-                className="px-6 py-2.5 text-xs font-semibold bg-brand text-base rounded-xl hover:bg-brand-hover transition-colors cursor-pointer"
+                className="cursor-pointer rounded-xl bg-brand px-6 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-brand-hover"
               >
                 Kirim Jawaban
               </button>

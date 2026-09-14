@@ -30,7 +30,10 @@ export default function FormTambahSoal({ onTambahSoal }) {
       mapel: data.mapel,
       pertanyaan: data.pertanyaan,
       tipe: tipeSoal === "pg" ? "Pilihan Ganda" : "Essay",
-      opsi: tipeSoal === "pg" ? [data.opsiA, data.opsiB, data.opsiC, data.opsiD] : [],
+      opsi:
+        tipeSoal === "pg"
+          ? [data.opsiA, data.opsiB, data.opsiC, data.opsiD]
+          : [],
       kunci: tipeSoal === "pg" ? data.kunciJawaban : null,
     };
 
@@ -53,7 +56,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
             onClick={() => setTipeSoal("pg")}
             className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               tipeSoal === "pg"
-                ? "bg-brand text-base font-bold shadow-md"
+                ? "bg-brand text-primary font-bold shadow-md"
                 : "text-secondary hover:text-primary"
             }`}
           >
@@ -64,7 +67,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
             onClick={() => setTipeSoal("essay")}
             className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               tipeSoal === "essay"
-                ? "bg-brand text-base font-bold shadow-md"
+                ? "bg-brand text-primary font-bold shadow-md"
                 : "text-secondary hover:text-primary"
             }`}
           >
@@ -142,7 +145,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
         <button
           type="submit"
-          className="w-full cursor-pointer rounded-xl bg-brand py-3.5 font-semibold text-sm text-base hover:bg-brand-hover transition-all shadow-lg mt-4"
+          className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover"
         >
           Simpan Soal
         </button>
@@ -150,13 +153,12 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
       {/*Link untuk mengarah ke halaman kelola-soal page.jsx*/}
       <Link
-          href="/dashboard/guru/kelola-soal"
-          className="text-xs mt-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"
-        >
-          Lihat Semua Soal &rarr;
-        </Link>
-        {/*Link end*/}
-
+        href="/dashboard/guru/kelola-soal"
+        className="text-xs mt-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"
+      >
+        Lihat Semua Soal &rarr;
+      </Link>
+      {/*Link end*/}
     </div>
   );
 }

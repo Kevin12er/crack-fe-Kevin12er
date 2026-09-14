@@ -13,7 +13,7 @@ export default function Greetings() {
           <h1 className="text-sm font-bold text-primary md:text-xl">
             Selamat datang, {nama} 👋
           </h1>
-          <span className="text-sm font-bold text-dim md:text-base">
+          <span className="text-sm font-bold text-dim md:text-[16px]">
             Semangat belajar hari ini - kamu sudah 14 hari berturut-turut!
           </span>
         </div>
