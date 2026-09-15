@@ -65,6 +65,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateProfile = ({ name }) => {
+    setUser((currentUser) => {
+      if (!currentUser) return currentUser;
+
+      return {
+        ...currentUser,
+        name: name?.trim() || currentUser.name,
+      };
+    });
+  };
+
   const value = useMemo(
     () => ({
       user,
@@ -72,6 +83,7 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
+      updateProfile,
     }),
     [user],
   );
