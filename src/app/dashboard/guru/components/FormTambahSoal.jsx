@@ -83,7 +83,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
           </label>
           <input
             type="text"
-            placeholder="Contoh: Pemrograman Web"
+            placeholder="Contoh: Operasi Bilangan Bulat"
             {...register("mapel", { required: "Mapel wajib diisi" })}
             className="w-full rounded-xl border border-line bg-base p-3 text-sm text-primary placeholder:text-muted focus:border-brand focus:outline-none"
           />

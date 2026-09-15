@@ -9,34 +9,28 @@ export default function LatihanSoalSiswaPage() {
   const [daftarLatihan] = useState([
     {
       id: 1,
-      judul: "Kuis Dasar Pemrograman Web",
-      mapel: "Pemrograman Web",
+      judul: "Kuis Operasi Bilangan Bulat",
+      mapel: "Operasi Bilangan Bulat",
       durasi: "15 Menit",
       jumlahSoal: 2,
       status: "Belum Dikerjakan",
       soal: [
         {
           id: 101,
-          pertanyaan: "Apa fungsi utama dari tag <a> dalam HTML?",
-          opsi: [
-            "Membuat teks tebal",
-            "Membuat hyperlink / tautan",
-            "Menambahkan gambar",
-            "Membuat tabel",
-          ],
+          pertanyaan: "Berapakah hasil dari -6 + 14 - 3?",
+          opsi: ["5", "7", "11", "-11"],
         },
         {
           id: 102,
-          pertanyaan:
-            "Properti CSS mana yang digunakan untuk mengubah warna teks?",
-          opsi: ["text-style", "font-color", "color", "background-color"],
+          pertanyaan: "Berapakah hasil dari 9 - (-4) + (-2)?",
+          opsi: ["15", "11", "13", "7"],
         },
       ],
     },
     {
       id: 2,
-      judul: "Evaluasi Topologi Jaringan",
-      mapel: "Jaringan Dasar",
+      judul: "Evaluasi Operasi Pecahan",
+      mapel: "Operasi Pecahan",
       durasi: "20 Menit",
       jumlahSoal: 5,
       status: "Selesai",

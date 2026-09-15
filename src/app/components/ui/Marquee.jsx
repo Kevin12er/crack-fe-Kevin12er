@@ -1,13 +1,20 @@
 const topics = [
-  "Bilangan Real", "Persamaan Linear", "Pertidaksamaan",
-  "Fungsi", "Statistika Dasar", "Peluang",
-  "Matriks", "Transformasi Geometri", "Barisan dan Deret",
-  "Program Linear", "Trigonometri", "Vektor",
-  "Limit Fungsi", "Turunan", "Integral",
-  "Statistika Lanjut", "Kombinatorik",
-]
+  "Bilangan Positif dan Negatif",
+  "Penjumlahan Bilangan Bulat",
+  "Pengurangan Bilangan Bulat",
+  "Perkalian Bilangan Bulat",
+  "Pembagian Bilangan Bulat",
+  "Operasi Campuran Bilangan Bulat",
+  "Pecahan Senilai",
+  "Menyederhanakan Pecahan",
+  "Penjumlahan Pecahan",
+  "Pengurangan Pecahan",
+  "Perkalian Pecahan",
+  "Pembagian Pecahan",
+  "Soal Cerita Pecahan",
+];
 
-const doubled = [...topics, ...topics]
+const doubled = [...topics, ...topics];
 
 export default function Marquee() {
   return (
@@ -21,5 +28,5 @@ export default function Marquee() {
         ))}
       </div>
     </div>
-  )
+  );
 }

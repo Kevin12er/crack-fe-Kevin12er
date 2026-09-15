@@ -12,7 +12,9 @@ export default function Navbar() {
   const previousActiveElement = useRef(null);
   const isGuru = user?.role === "guru";
   const dashboardHref = isGuru ? "/dashboard/guru" : "/dashboard/siswa";
-  const materiHref = isGuru ? "/dashboard/guru" : "/dashboard/siswa/materi";
+  const materiHref = isGuru
+    ? "/dashboard/guru/materi"
+    : "/dashboard/siswa/materi";
 
   function getFocusableElements(container) {
     if (!container) return [];

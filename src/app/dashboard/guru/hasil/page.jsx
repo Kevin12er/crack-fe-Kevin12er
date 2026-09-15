@@ -13,7 +13,7 @@ export default function HasilUjianGuruPage() {
       id: 1,
       nama: "Budi Santoso",
       kelas: "XII RPL 1",
-      mapel: "Pemrograman Web",
+      mapel: "Operasi Bilangan Bulat",
       nilai: 85,
       tanggal: "2026-09-01",
     },
@@ -21,7 +21,7 @@ export default function HasilUjianGuruPage() {
       id: 2,
       nama: "Siti Aminah",
       kelas: "XII RPL 1",
-      mapel: "Pemrograman Web",
+      mapel: "Operasi Bilangan Bulat",
       nilai: 60,
       tanggal: "2026-09-01",
     },
@@ -29,7 +29,7 @@ export default function HasilUjianGuruPage() {
       id: 3,
       nama: "Rian Pratama",
       kelas: "XII RPL 2",
-      mapel: "Jaringan Dasar",
+      mapel: "Operasi Pecahan",
       nilai: 92,
       tanggal: "2026-09-02",
     },
@@ -37,7 +37,7 @@ export default function HasilUjianGuruPage() {
       id: 4,
       nama: "Dewi Lestari",
       kelas: "XII RPL 2",
-      mapel: "Basis Data",
+      mapel: "Operasi Pecahan",
       nilai: 70,
       tanggal: "2026-09-03",
     },
@@ -126,9 +126,10 @@ export default function HasilUjianGuruPage() {
                 className="bg-base border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand"
               >
                 <option value="Semua">Semua Mata Pelajaran</option>
-                <option value="Pemrograman Web">Pemrograman Web</option>
-                <option value="Jaringan Dasar">Jaringan Dasar</option>
-                <option value="Basis Data">Basis Data</option>
+                <option value="Operasi Bilangan Bulat">
+                  Operasi Bilangan Bulat
+                </option>
+                <option value="Operasi Pecahan">Operasi Pecahan</option>
               </select>
             </div>
           </div>

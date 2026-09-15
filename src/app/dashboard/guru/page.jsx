@@ -11,6 +11,32 @@ export default function DashboardGuruPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
+  const [daftarSoal, setDaftarSoal] = useState([
+    {
+      id: 1,
+      pertanyaan: "Hitung hasil dari -12 + 7 - (-5).",
+      tipe: "Pilihan Ganda",
+      mapel: "Operasi Bilangan Bulat",
+    },
+  ]);
+
+  const [dataHasil] = useState([
+    {
+      id: 1,
+      nama: "Budi Santoso",
+      kelas: "XII RPL 1",
+      mapel: "Operasi Bilangan Bulat",
+      nilai: 85,
+    },
+    {
+      id: 2,
+      nama: "Siti Aminah",
+      kelas: "XII RPL 1",
+      mapel: "Operasi Pecahan",
+      nilai: 60,
+    },
+  ]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login");
@@ -25,32 +51,6 @@ export default function DashboardGuruPage() {
   if (!isAuthenticated || user?.role !== "guru") {
     return null;
   }
-
-  const [daftarSoal, setDaftarSoal] = useState([
-    {
-      id: 1,
-      pertanyaan: "Apa fungsi dari protokol HTTP?",
-      tipe: "Pilihan Ganda",
-      mapel: "Jaringan Dasar",
-    },
-  ]);
-
-  const [dataHasil] = useState([
-    {
-      id: 1,
-      nama: "Budi Santoso",
-      kelas: "XII RPL 1",
-      mapel: "Pemrograman Web",
-      nilai: 85,
-    },
-    {
-      id: 2,
-      nama: "Siti Aminah",
-      kelas: "XII RPL 1",
-      mapel: "Pemrograman Web",
-      nilai: 60,
-    },
-  ]);
 
   const handleTambahSoal = (soalBaru) => {
     setDaftarSoal((prev) => [soalBaru, ...prev]);

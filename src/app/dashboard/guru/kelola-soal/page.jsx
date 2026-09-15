@@ -14,25 +14,24 @@ export default function KelolaSoalPage() {
   const [daftarSoal, setDaftarSoal] = useState([
     {
       id: 1,
-      pertanyaan: "Apa fungsi dari protokol HTTP?",
-      mapel: "Jaringan Dasar",
+      pertanyaan: "Tentukan hasil dari -8 + 15 - 4.",
+      mapel: "Operasi Bilangan Bulat",
       tipe: "Pilihan Ganda",
-      kunci: "Hypertext Transfer Protocol untuk komunikasi data web",
+      kunci: "3",
     },
     {
       id: 2,
-      pertanyaan: "Jelaskan perbedaan antara CSS Flexbox dan Grid!",
-      mapel: "Pemrograman Web",
+      pertanyaan: "Sederhanakan pecahan 18/24 ke bentuk paling sederhana.",
+      mapel: "Operasi Pecahan",
       tipe: "Essay",
-      kunci: "Flexbox untuk 1 dimensi, Grid untuk 2 dimensi",
+      kunci: "3/4",
     },
     {
       id: 3,
-      pertanyaan:
-        "Sebutkan perintah SQL untuk mengambil semua kolom dari tabel 'users'!",
-      mapel: "Basis Data",
+      pertanyaan: "Hitung 2/3 + 1/6.",
+      mapel: "Operasi Pecahan",
       tipe: "Pilihan Ganda",
-      kunci: "SELECT * FROM users;",
+      kunci: "5/6",
     },
   ]);
 
@@ -106,9 +105,10 @@ export default function KelolaSoalPage() {
                 className="bg-base border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand"
               >
                 <option value="Semua">Semua Mata Pelajaran</option>
-                <option value="Jaringan Dasar">Jaringan Dasar</option>
-                <option value="Pemrograman Web">Pemrograman Web</option>
-                <option value="Basis Data">Basis Data</option>
+                <option value="Operasi Bilangan Bulat">
+                  Operasi Bilangan Bulat
+                </option>
+                <option value="Operasi Pecahan">Operasi Pecahan</option>
               </select>
             </div>
           </div>

@@ -17,7 +17,7 @@ export default function MateriPage() {
               Materi Belajar Matematika
             </h1>
 
-            <p className="mx-auto max-w-2xl text-sm text-secondary md:text-base">
+            <p className="mx-auto max-w-2xl text-sm text-secondary md:text-[15px] md:text-primary/85">
               Pelajari topik sesuai kelasmu dengan jalur materi yang
               terstruktur, ringkas, dan mudah diikuti dari dasar sampai mahir.
             </p>
@@ -27,60 +27,20 @@ export default function MateriPage() {
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           <MateriCard
             icon="🔢"
-            nama="Aljabar Dasar"
+            nama="Operasi Hitung Bilangan Bulat Positif dan Negatif"
             kelas="Kelas X"
-            materi={12}
-            jam={4}
-            progress={0}
+            materi={6}
+            jam={2.5}
+            progress={20}
             status="start"
           />
 
           <MateriCard
-            icon="📐"
-            nama="Geometri Dasar"
+            icon="➗"
+            nama="Operasi Hitung dalam Bentuk Pecahan"
             kelas="Kelas X"
-            materi={8}
-            jam={3}
-            progress={0}
-            status="locked"
-          />
-
-          <MateriCard
-            icon="📊"
-            nama="Statistika Dasar"
-            kelas="Kelas X"
-            materi={10}
-            jam={3.5}
-            progress={0}
-            status="locked"
-          />
-
-          <MateriCard
-            icon="🔺"
-            nama="Trigonometri"
-            kelas="Kelas X"
-            materi={10}
-            jam={3.5}
-            progress={0}
-            status="locked"
-          />
-
-          <MateriCard
-            icon="📈"
-            nama="Program Linear"
-            kelas="Kelas X"
-            materi={10}
-            jam={3.5}
-            progress={0}
-            status="locked"
-          />
-
-          <MateriCard
-            icon="∫"
-            nama="Integral"
-            kelas="Kelas XII"
-            materi={18}
-            jam={7}
+            materi={5}
+            jam={2}
             progress={0}
             status="locked"
           />
