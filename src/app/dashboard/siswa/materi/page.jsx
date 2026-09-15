@@ -4,7 +4,7 @@ export default function MateriPage() {
   return (
     <div className="px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto w-full max-w-6xl">
-        <section className="relative overflow-hidden rounded-3xl border border-line-card bg-gradient-to-br from-surface to-elevated px-6 py-7 md:px-10 md:py-9">
+        <section className="relative overflow-hidden rounded-3xl border border-line-card bg-linear-to-br from-surface to-elevated px-6 py-7 md:px-10 md:py-9">
           <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-brand-soft blur-2xl" />
           <div className="pointer-events-none absolute -bottom-20 -right-10 h-44 w-44 rounded-full bg-brand-soft blur-3xl" />
 
