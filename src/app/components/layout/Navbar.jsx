@@ -10,6 +10,9 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const previousActiveElement = useRef(null);
+  const isGuru = user?.role === "guru";
+  const dashboardHref = isGuru ? "/dashboard/guru" : "/dashboard/siswa";
+  const materiHref = isGuru ? "/dashboard/guru" : "/dashboard/siswa/materi";
 
   function getFocusableElements(container) {
     if (!container) return [];
@@ -87,9 +90,19 @@ export default function Navbar() {
                 Beranda
               </Link>
             </li>
+            {isAuthenticated && (
+              <li>
+                <Link
+                  href={dashboardHref}
+                  className="hover:text-white transition-colors duration-200"
+                >
+                  Dashboard
+                </Link>
+              </li>
+            )}
             <li>
               <Link
-                href="/dashboard/siswa/materi"
+                href={materiHref}
                 className="hover:text-white transition-colors duration-200"
               >
                 Materi
@@ -167,13 +180,25 @@ export default function Navbar() {
           <Link
             href="/"
             role="menuitem"
+            onClick={() => setIsOpen(false)}
             className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
           >
             Beranda
           </Link>
+          {isAuthenticated && (
+            <Link
+              href={dashboardHref}
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
+            >
+              Dashboard
+            </Link>
+          )}
           <Link
-            href="/dashboard/siswa/materi"
+            href={materiHref}
             role="menuitem"
+            onClick={() => setIsOpen(false)}
             className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
           >
             Materi
@@ -181,6 +206,7 @@ export default function Navbar() {
           <Link
             href="/"
             role="menuitem"
+            onClick={() => setIsOpen(false)}
             className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
           >
             Tentang Kami
@@ -206,6 +232,7 @@ export default function Navbar() {
               <Link
                 href="/login"
                 role="menuitem"
+                onClick={() => setIsOpen(false)}
                 className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
               >
                 Masuk
@@ -213,6 +240,7 @@ export default function Navbar() {
               <Link
                 href="/register"
                 role="menuitem"
+                onClick={() => setIsOpen(false)}
                 className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
               >
                 Daftar
