@@ -112,14 +112,6 @@ export default function Navbar() {
                 Materi
               </Link>
             </li>
-            <li>
-              <Link
-                href="/"
-                className="hover:text-white transition-colors duration-200"
-              >
-                Tentang kami
-              </Link>
-            </li>
           </ul>
         </nav>
 
@@ -206,14 +198,6 @@ export default function Navbar() {
             className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
           >
             Materi
-          </Link>
-          <Link
-            href="/"
-            role="menuitem"
-            onClick={() => setIsOpen(false)}
-            className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
-          >
-            Tentang Kami
           </Link>
 
           <hr className="border-line" />
