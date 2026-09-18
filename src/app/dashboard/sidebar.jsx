@@ -121,10 +121,10 @@ export default function Sidebar() {
               </div>
               <div>
                 <div className="text-sm font-bold text-primary">
-                  {user?.name || "Siswa"}
+                  {user?.name || "Pengguna"}
                 </div>
                 <div className="text-xs text-secondary">
-                  {user?.role === "guru" ? "Guru" : "Siswa"}
+                  {user?.role === "INSTRUCTOR" || user?.role === "guru" ? "Guru" : "Siswa"}
                 </div>
               </div>
             </div>

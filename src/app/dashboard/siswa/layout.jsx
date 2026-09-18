@@ -15,12 +15,12 @@ export default function SiswaLayout({ children }) {
       return;
     }
 
-    if (user?.role !== "siswa") {
+    if (user?.role !== "STUDENT") {
       router.replace("/dashboard/guru");
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.role !== "siswa") {
+  if (!isAuthenticated || user?.role !== "STUDENT") {
     return null;
   }
 

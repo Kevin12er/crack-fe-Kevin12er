@@ -5,19 +5,23 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
+import { fetchApi } from "@/lib/api"; // 1. Tambahkan import ini
 
 export default function LoginPage() {
   const router = useRouter();
   const { user, login, isAuthenticated } = useAuth();
   const [role, setRole] = useState("siswa");
+  const [errorMessage, setErrorMessage] = useState(""); // 2. State untuk handle error login
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      router.replace(
-        user.role === "guru" ? "/dashboard/guru" : "/dashboard/siswa",
-      );
-    }
-  }, [isAuthenticated, user, router]);
+  if (isAuthenticated && user) {
+    // Normalisasi role agar bisa membaca "guru" maupun "INSTRUCTOR"
+    const userRole = String(user.role).toLowerCase();
+    const isGuru = userRole === "guru" || userRole === "instructor";
+
+    router.replace(isGuru ? "/dashboard/guru" : "/dashboard/siswa");
+  }
+}, [isAuthenticated, user, router]);
 
   const {
     register,
@@ -30,18 +34,46 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = (data) => {
-    const sessionUser = login({
-      email: data.email,
-      password: data.password,
-      role,
-      name: data.email.split("@")[0],
-    });
+  // 3. Ubah fungsi onSubmit menjadi async untuk integrasi API
+  const onSubmit = async (data) => {
+    setErrorMessage("");
+    try {
+      // Kirim request login ke backend Railway
+      const response = await fetchApi("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
 
-    if (sessionUser.role === "guru") {
-      router.push("/dashboard/guru");
-    } else {
-      router.push("/dashboard/siswa");
+      // Simpan JWT Token ke localStorage
+      if (response?.access_token) {
+        localStorage.setItem("token", response.access_token);
+      }
+
+      // Ambil data user dari respon (jika ada) atau gunakan fallback
+      const userData = response?.user || {
+        email: data.email,
+        role: role === "guru" ? "INSTRUCTOR" : "STUDENT",
+        name: data.email.split("@")[0],
+      };
+
+      // Simpan ke Auth Context lokal
+      login(userData);
+
+      // Redirect berdasarkan role dari backend/pilihan
+      const isInstructor =
+        userData.role === "INSTRUCTOR" || userData.role === "guru" || role === "guru";
+
+      if (isInstructor) {
+        router.push("/dashboard/guru");
+      } else {
+        router.push("/dashboard/siswa");
+      }
+    } catch (err) {
+      // Tampilkan error dari backend (misal: "Unauthorized" / "Email atau password salah")
+      setErrorMessage(err.message || "Gagal masuk. Periksa kembali email dan password Anda.");
     }
   };
 
@@ -61,6 +93,13 @@ export default function LoginPage() {
           </div>
 
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+            {/* Pesan Error Login dari Backend */}
+            {errorMessage && (
+              <div className="p-3.5 rounded-xl bg-av-red/10 border border-av-red/30 text-av-red text-xs font-semibold text-center">
+                {errorMessage}
+              </div>
+            )}
+
             {/* Role Switcher */}
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
@@ -154,7 +193,7 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="w-full cursor-pointer rounded-xl bg-brand py-3.5 font-semibold text-sm text-primary hover:bg-brand-hover active:scale-[0.98] transition-all shadow-lg mt-2 disabled:opacity-50"
             >
-              Masuk ke Kelas ({role === "guru" ? "Guru" : "Siswa"})
+              {isSubmitting ? "Memproses..." : `Masuk ke Kelas (${role === "guru" ? "Guru" : "Siswa"})`}
             </button>
 
             <p className="text-xs font-bold text-secondary text-center mt-4">

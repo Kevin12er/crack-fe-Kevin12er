@@ -12,18 +12,22 @@ export default function SiswaDashboard() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
+  // Normalisasi role supaya menerima STUDENT atau SISWA dari backend
+  const userRole = String(user?.role || "").toUpperCase();
+  const isSiswa = userRole === "STUDENT" || userRole === "SISWA";
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login");
       return;
     }
 
-    if (user?.role !== "siswa") {
+    if (!isSiswa) {
       router.replace("/dashboard/guru");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, isSiswa, router]);
 
-  if (!isAuthenticated || user?.role !== "siswa") {
+  if (!isAuthenticated || !isSiswa) {
     return null;
   }
 

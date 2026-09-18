@@ -39,12 +39,12 @@ export default function MateriGuruPage() {
       return;
     }
 
-    if (user?.role !== "guru") {
+    if (user?.role !== "INSTRUCTOR") {
       router.replace("/dashboard/siswa/materi");
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.role !== "guru") {
+  if (!isAuthenticated || user?.role !== "INSTRUCTOR") {
     return null;
   }
 

@@ -37,18 +37,22 @@ export default function DashboardGuruPage() {
     },
   ]);
 
+  // Normalisasi role supaya menerima INSTRUCTOR atau GURU dari backend
+  const userRole = String(user?.role || "").toUpperCase();
+  const isGuru = userRole === "INSTRUCTOR" || userRole === "GURU";
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login");
       return;
     }
 
-    if (user?.role !== "guru") {
+    if (!isGuru) {
       router.replace("/dashboard/siswa");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, isGuru, router]);
 
-  if (!isAuthenticated || user?.role !== "guru") {
+  if (!isAuthenticated || !isGuru) {
     return null;
   }
 
@@ -104,7 +108,7 @@ export default function DashboardGuruPage() {
                 {dataHasil.length > 0
                   ? Math.round(
                       dataHasil.reduce((acc, curr) => acc + curr.nilai, 0) /
-                        dataHasil.length,
+                        dataHasil.length
                     )
                   : 0}
               </h3>
@@ -121,7 +125,7 @@ export default function DashboardGuruPage() {
               {/* Tabel Hasil Pengerjaan Siswa */}
               <TabelHasilSiswa dataHasil={dataHasil} />
 
-              {/* Ringkasan Bank Soal Singkat */}
+              {/* Ringkasan Bank Soal Terakhir */}
               <div className="bg-surface border border-line rounded-2xl p-6">
                 <h3 className="text-md font-bold text-primary mb-3">
                   Bank Soal Terakhir Ditambahkan

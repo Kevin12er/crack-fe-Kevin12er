@@ -14,12 +14,12 @@ export default function DashboardGuruLayout({ children }) {
       return;
     }
 
-    if (user?.role !== "guru") {
+    if (user?.role !== "INSTRUCTOR") {
       router.replace("/dashboard/siswa");
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.role !== "guru") {
+  if (!isAuthenticated || user?.role !== "INSTRUCTOR") {
     return null;
   }
 

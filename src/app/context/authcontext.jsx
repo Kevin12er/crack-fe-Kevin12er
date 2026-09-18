@@ -28,17 +28,19 @@ export function AuthProvider({ children }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
     } else {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem("token"); // Bersihkan JWT token juga
     }
   }, [user, isHydrated]);
 
-  const login = ({ email, password, role, name }) => {
-    const safeName = name || email?.split("@")[0] || "Pengguna";
+  // Fungsi login menerima object user asli dari backend
+  const login = (userData) => {
+    // Normalisasi role agar konsisten di seluruh aplikasi
+    const rawRole = userData?.role || "";
+    const isGuru = rawRole === "INSTRUCTOR" || rawRole === "guru";
+
     const nextUser = {
-      id: Date.now().toString(),
-      name: safeName,
-      email,
-      role,
-      password,
+      ...userData,
+      role: isGuru ? "INSTRUCTOR" : "STUDENT",
       isAuthenticated: true,
     };
 
@@ -46,22 +48,12 @@ export function AuthProvider({ children }) {
     return nextUser;
   };
 
-  const register = ({ email, password, role, name }) => {
-    const safeName = name || email?.split("@")[0] || "Pengguna";
-    const nextUser = {
-      id: Date.now().toString(),
-      name: safeName,
-      email,
-      role,
-      password,
-      isAuthenticated: true,
-    };
-
-    setUser(nextUser);
-    return nextUser;
+  const register = (userData) => {
+    return login(userData);
   };
 
   const logout = () => {
+    localStorage.removeItem("token");
     setUser(null);
   };
 

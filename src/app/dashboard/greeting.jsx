@@ -4,7 +4,7 @@ import { useAuth } from "@/app/context/authcontext";
 
 export default function Greetings() {
   const { user } = useAuth();
-  const nama = user?.name || "Siswa";
+  const nama = user?.name || "STUDENT";
 
   return (
     <div className="mt-12 px-4 font-jakarta md:mt-4 md:px-8">
