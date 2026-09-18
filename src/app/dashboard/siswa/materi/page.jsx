@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import MateriCard from "./components/MateriCards";
 import { fetchApi } from "@/lib/api";
 
-export default function MateriPage() {
+function MateriPage() {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,9 +28,9 @@ export default function MateriPage() {
   }, []);
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8">
+    <div className="px-4 py-6 md:px-8 md:py-8 font-jakarta">
       <div className="mx-auto w-full max-w-6xl">
-        <section className="relative overflow-hidden rounded-3xl border border-line-card bg-linear-to-br from-surface to-elevated px-6 py-7 md:px-10 md:py-9">
+        <section className="relative overflow-hidden rounded-3xl border border-line-card bg-surface px-6 py-7 md:px-10 md:py-9">
           <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-brand-soft blur-2xl" />
           <div className="pointer-events-none absolute -bottom-20 -right-10 h-44 w-44 rounded-full bg-brand-soft blur-3xl" />
 
@@ -39,7 +39,7 @@ export default function MateriPage() {
               Ruang Belajar
             </span>
 
-            <h1 className="font-jakarta text-3xl font-extrabold leading-tight text-primary md:text-5xl">
+            <h1 className="text-3xl font-extrabold leading-tight text-primary md:text-5xl">
               Materi Belajar Matematika
             </h1>
 
@@ -71,6 +71,7 @@ export default function MateriPage() {
               materials.map((item, index) => (
                 <MateriCard
                   key={item.id || index}
+                  id={item.id}
                   icon={item.icon || "📚"}
                   nama={item.title || item.nama || "Materi Pembelajaran"}
                   kelas={item.kelas || item.course?.title || "Umum"}
@@ -81,7 +82,7 @@ export default function MateriPage() {
                 />
               ))
             ) : (
-              <div className="col-span-full py-12 text-center text-sm text-secondary">
+              <div className="col-span-full py-12 text-center text-sm text-secondary rounded-2xl border border-dashed border-line">
                 Belum ada materi pembelajaran yang tersedia saat ini.
               </div>
             )}
@@ -91,3 +92,6 @@ export default function MateriPage() {
     </div>
   );
 }
+
+// Pastikan export default ada di baris paling bawah secara eksplisit
+export default MateriPage;

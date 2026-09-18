@@ -1,4 +1,7 @@
+import Link from "next/link";
+
 export default function MateriCard({
+  id,
   icon,
   nama,
   kelas,
@@ -7,6 +10,9 @@ export default function MateriCard({
   progress,
   status,
 }) {
+  // Tentukan URL tujuan berdasarkan id materi
+  const detailHref = id ? `/dashboard/siswa/materi/${id}` : "#";
+
   return (
     <div className="flex h-full flex-col gap-4 rounded-2xl border border-line-card bg-surface p-5">
       {/* Top */}
@@ -47,28 +53,37 @@ export default function MateriCard({
         </div>
       </div>
 
-      {/* Tombol */}
+      {/* Tombol dengan Navigasi Link */}
       {status === "progress" && (
-        <button className="w-full py-3 bg-brand cursor-pointer hover:bg-brand-hover text-white font-jakarta font-bold text-sm rounded-xl transition-all active:scale-95">
+        <Link
+          href={detailHref}
+          className="block text-center w-full py-3 bg-brand cursor-pointer hover:bg-brand-hover text-white font-jakarta font-bold text-sm rounded-xl transition-all active:scale-95"
+        >
           Lanjut Belajar
-        </button>
+        </Link>
       )}
       {status === "done" && (
-        <button className="w-full py-3 bg-transparent border border-brand text-brand font-jakarta font-bold text-sm rounded-xl">
-          ✓ Selesai
-        </button>
+        <Link
+          href={detailHref}
+          className="block text-center w-full py-3 bg-transparent border border-brand text-brand hover:bg-brand/10 font-jakarta font-bold text-sm rounded-xl transition-all"
+        >
+          ✓ Selesai (Baca Ulang)
+        </Link>
       )}
       {status === "start" && (
-        <button className="w-full py-3 cursor-pointer bg-brand hover:bg-brand-hover text-white font-jakarta font-bold text-sm rounded-xl transition-all active:scale-95">
+        <Link
+          href={detailHref}
+          className="block text-center w-full py-3 cursor-pointer bg-brand hover:bg-brand-hover text-white font-jakarta font-bold text-sm rounded-xl transition-all active:scale-95"
+        >
           Mulai Belajar
-        </button>
+        </Link>
       )}
       {status === "locked" && (
         <button
           disabled
           className="w-full py-3 bg-elevated text-dim font-jakarta font-bold text-sm rounded-xl cursor-not-allowed"
         >
-          🔒 Selesaikan {kelas} dulu
+          🔒 Selesaikan prasyarat dulu
         </button>
       )}
     </div>
