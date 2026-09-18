@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
+import { fetchApi } from "@/lib/api";
 
 export default function FormTambahSoal({ onTambahSoal }) {
   const [tipeSoal, setTipeSoal] = useState("pg");
+  const [quizzes, setQuizzes] = useState([]);
+  const [selectedQuizId, setSelectedQuizId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -14,7 +18,6 @@ export default function FormTambahSoal({ onTambahSoal }) {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      mapel: "",
       pertanyaan: "",
       opsiA: "",
       opsiB: "",
@@ -24,21 +27,110 @@ export default function FormTambahSoal({ onTambahSoal }) {
     },
   });
 
-  const onSubmit = (data) => {
-    const payload = {
-      id: Date.now(),
-      mapel: data.mapel,
-      pertanyaan: data.pertanyaan,
-      tipe: tipeSoal === "pg" ? "Pilihan Ganda" : "Essay",
-      opsi:
-        tipeSoal === "pg"
-          ? [data.opsiA, data.opsiB, data.opsiC, data.opsiD]
-          : [],
-      kunci: tipeSoal === "pg" ? data.kunciJawaban : null,
-    };
+  // Fetch daftar Quiz dari backend /quizzes
+  const fetchQuizzes = async () => {
+    try {
+      const data = await fetchApi("/quizzes");
+      const list = Array.isArray(data) ? data : [];
+      setQuizzes(list);
 
-    if (onTambahSoal) onTambahSoal(payload);
-    reset();
+      if (list.length > 0) {
+        setSelectedQuizId(list[0].id);
+      }
+    } catch (err) {
+      console.warn("Gagal memuat kuis:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchQuizzes();
+  }, []);
+
+  // Handler Submit Form ke Backend NestJS
+  const onSubmit = async (data) => {
+    try {
+      setIsSubmitting(true);
+
+      let quizIdToUse = selectedQuizId;
+
+      // 1. Jika belum ada Quiz di DB, buat 1 Quiz default lebih dulu
+      if (!quizIdToUse) {
+        // Cari course valid dari DB
+        let courseId = "course-1";
+        try {
+          const courses = await fetchApi("/courses");
+          if (Array.isArray(courses) && courses.length > 0) {
+            courseId = courses[0].id;
+          }
+        } catch (cErr) {
+          console.warn("Gagal fetch course:", cErr);
+        }
+
+        const newQuiz = await fetchApi("/quizzes", {
+          method: "POST",
+          body: JSON.stringify({
+            title: "Bank Soal Evaluasi",
+            description: "Kuis evaluasi umum pembelajaran.",
+            courseId: courseId,
+          }),
+        });
+
+        if (newQuiz?.id) {
+          quizIdToUse = newQuiz.id;
+          setSelectedQuizId(newQuiz.id);
+        }
+      }
+
+      // 2. Simpan Pertanyaan ke POST /quiz-questions
+      const newQuestion = await fetchApi("/quiz-questions", {
+        method: "POST",
+        body: JSON.stringify({
+          quizId: quizIdToUse,
+          questionText: data.pertanyaan,
+        }),
+      });
+
+      // 3. Jika Pilihan Ganda, Simpan Opsi Jawaban ke POST /quiz-options
+      if (tipeSoal === "pg" && newQuestion?.id) {
+        const optionsPayload = [
+          { text: data.opsiA, isCorrect: data.kunciJawaban === "A" },
+          { text: data.opsiB, isCorrect: data.kunciJawaban === "B" },
+          { text: data.opsiC, isCorrect: data.kunciJawaban === "C" },
+          { text: data.opsiD, isCorrect: data.kunciJawaban === "D" },
+        ];
+
+        for (const opt of optionsPayload) {
+          if (opt.text) {
+            await fetchApi("/quiz-options", {
+              method: "POST",
+              body: JSON.stringify({
+                questionId: newQuestion.id,
+                optionText: opt.text,
+                isCorrect: opt.isCorrect,
+              }),
+            });
+          }
+        }
+      }
+
+      alert("Soal berhasil disimpan ke database!");
+
+      // Jalankan callback opsional jika ada
+      if (onTambahSoal) {
+        onTambahSoal({
+          id: newQuestion?.id || Date.now(),
+          pertanyaan: data.pertanyaan,
+          tipe: tipeSoal === "pg" ? "Pilihan Ganda" : "Essay",
+        });
+      }
+
+      reset();
+      await fetchQuizzes();
+    } catch (err) {
+      alert("Gagal menyimpan soal: " + (err.message || "Terjadi kesalahan server."));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -77,20 +169,25 @@ export default function FormTambahSoal({ onTambahSoal }) {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
-            Mata Pelajaran
-          </label>
-          <input
-            type="text"
-            placeholder="Contoh: Operasi Bilangan Bulat"
-            {...register("mapel", { required: "Mapel wajib diisi" })}
-            className="w-full rounded-xl border border-line bg-base p-3 text-sm text-primary placeholder:text-muted focus:border-brand focus:outline-none"
-          />
-          {errors.mapel && (
-            <p className="text-xs text-av-red mt-1">{errors.mapel.message}</p>
-          )}
-        </div>
+        {/* Pilih Kuis Terkait */}
+        {quizzes.length > 0 && (
+          <div>
+            <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+              Pilih Kuis / Modul
+            </label>
+            <select
+              value={selectedQuizId}
+              onChange={(e) => setSelectedQuizId(e.target.value)}
+              className="w-full rounded-xl border border-line bg-base p-3 text-xs text-primary focus:border-brand focus:outline-none"
+            >
+              {quizzes.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.title} ({q.course?.title || "Umum"})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
@@ -145,20 +242,20 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
         <button
           type="submit"
-          className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover"
+          disabled={isSubmitting}
+          className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover disabled:opacity-50"
         >
-          Simpan Soal
+          {isSubmitting ? "Menyimpan Soal..." : "Simpan Soal"}
         </button>
       </form>
 
-      {/*Link untuk mengarah ke halaman kelola-soal page.jsx*/}
+      {/* Link ke Kelola Soal */}
       <Link
         href="/dashboard/guru/kelola-soal"
         className="text-xs mt-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"
       >
         Lihat Semua Soal &rarr;
       </Link>
-      {/*Link end*/}
     </div>
   );
 }
