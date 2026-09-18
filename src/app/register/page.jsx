@@ -5,17 +5,20 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
+import { fetchApi } from "@/lib/api"; // 1. Import fetchApi
 
 export default function RegisterPage() {
   const router = useRouter();
   const { user, register: registerUser, isAuthenticated } = useAuth();
   const [role, setRole] = useState("siswa");
+  const [errorMessage, setErrorMessage] = useState(""); // State untuk error API
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      router.replace(
-        user.role === "guru" ? "/dashboard/guru" : "/dashboard/siswa",
-      );
+      const userRole = String(user.role).toUpperCase();
+      const isGuru = userRole === "INSTRUCTOR" || userRole === "GURU";
+
+      router.replace(isGuru ? "/dashboard/guru" : "/dashboard/siswa");
     }
   }, [isAuthenticated, user, router]);
 
@@ -35,18 +38,49 @@ export default function RegisterPage() {
 
   const password = watch("password");
 
-  const onSubmit = (data) => {
-    registerUser({
-      name: data.nama,
-      email: data.email,
-      password: data.password,
-      role,
-    });
+  // 2. Ubah onSubmit menjadi async untuk integrasi API
+  const onSubmit = async (data) => {
+    setErrorMessage("");
+    try {
+      // Tentukan role kapital sesuai DTO NestJS/Prisma
+      const backendRole = role === "guru" ? "INSTRUCTOR" : "STUDENT";
 
-    if (role === "guru") {
-      router.push("/dashboard/guru");
-    } else {
-      router.push("/dashboard/siswa");
+      // Kirim request ke endpoint backend Railway
+      const response = await fetchApi("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: data.nama,
+          email: data.email,
+          password: data.password,
+          role: backendRole,
+        }),
+      });
+
+      // Simpan token JWT jika backend mengembalikannya saat register
+      if (response?.access_token) {
+        localStorage.setItem("token", response.access_token);
+      }
+
+      // Siapkan objek user untuk AuthContext
+      const userData = response?.user || {
+        name: data.nama,
+        email: data.email,
+        role: backendRole,
+      };
+
+      // Simpan ke Auth Context
+      registerUser(userData);
+
+      // Redirect ke dashboard yang sesuai
+      if (backendRole === "INSTRUCTOR") {
+        router.push("/dashboard/guru");
+      } else {
+        router.push("/dashboard/siswa");
+      }
+    } catch (err) {
+      setErrorMessage(
+        err.message || "Gagal mendaftar. Email mungkin sudah digunakan."
+      );
     }
   };
 
@@ -64,6 +98,13 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Pesan Error dari Backend */}
+            {errorMessage && (
+              <div className="p-3.5 rounded-xl bg-av-red/10 border border-av-red/30 text-av-red text-xs font-semibold text-center">
+                {errorMessage}
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
                 Daftar Sebagai
@@ -221,7 +262,7 @@ export default function RegisterPage() {
               disabled={isSubmitting}
               className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-50"
             >
-              Daftar Sebagai {role === "guru" ? "Guru" : "Siswa"}
+              {isSubmitting ? "Mendaftarkan..." : `Daftar Sebagai ${role === "guru" ? "Guru" : "Siswa"}`}
             </button>
           </form>
 
