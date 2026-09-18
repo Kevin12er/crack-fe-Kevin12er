@@ -5,7 +5,7 @@ import Link from "next/link";
 import Navbar from "@/app/components/layout/Navbar";
 import { fetchApi } from "@/lib/api";
 
-export default function LatihanSoalPage() {
+export default function DaftarKuisSiswaPage() {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,16 +34,16 @@ export default function LatihanSoalPage() {
         <div className="mx-auto max-w-5xl space-y-6">
           <div className="border-b border-line pb-4">
             <h1 className="text-2xl font-extrabold text-primary md:text-3xl">
-              Latihan Soal & Evaluasi <span className="text-brand">Siswa</span>
+              Kuis & Evaluasi <span className="text-brand">Siswa</span>
             </h1>
             <p className="mt-1 text-xs text-secondary">
-              Pilih paket soal yang tersedia untuk menguji pemahaman materimu.
+              Pilih kuis yang tersedia untuk menguji pemahaman materimu.
             </p>
           </div>
 
           {loading && (
             <div className="py-12 text-center text-xs font-semibold text-secondary">
-              Memuat daftar latihan soal...
+              Memuat daftar kuis...
             </div>
           )}
 
@@ -75,15 +75,15 @@ export default function LatihanSoalPage() {
 
                     <Link
                       href={`/dashboard/siswa/kuis/${item.id}`}
-                      className="block text-center w-full rounded-xl bg-brand py-2.5 text-xs font-bold text-primary hover:bg-brand-hover transition-all cursor-pointer"
+                      className="block text-center w-full rounded-xl bg-brand py-2.5 text-xs font-bold text-primary hover:bg-brand-hover transition-all"
                     >
-                      Mulai Kerjakan
+                      Kerjakan Kuis
                     </Link>
                   </div>
                 ))
               ) : (
                 <div className="col-span-full py-12 text-center text-xs text-secondary rounded-2xl border border-dashed border-line">
-                  Belum ada latihan soal yang tersedia saat ini.
+                  Belum ada kuis yang tersedia saat ini.
                 </div>
               )}
             </div>
