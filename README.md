@@ -16,34 +16,37 @@ Platform pembelajaran online matematika yang dibangun dengan Next.js untuk mendu
 - **Form**: React Hook Form
 - **Runtime**: Node.js
 
-## Struktur Folder
+##  Struktur Folder Project
 
-```
+```text
 src/
 ├── app/
 │   ├── components/
-│   │   ├── layout/          # Navbar dan Footer
-│   │   └── ui/              # Komponen UI reusable (Card, Marquee)
-│   ├── context/             # React Context (Auth)
-│   ├── dashboard/           # Dashboard utama
-│   │   ├── guru/            # Dashboard untuk guru
+│   │   ├── layout/          # Navbar & Footer
+│   │   └── ui/              # Komponen UI Reusable (Card, Marquee)
+│   ├── context/             # AuthContext (Sesi & Role User)
+│   ├── dashboard/           # Modul Dashboard Utama
+│   │   ├── greeting.jsx     # Komponen Ucapan Dinamis
+│   │   ├── guru/            # Fitur & Halaman Pengajar
 │   │   │   ├── components/  # FormTambahSoal, TabelHasilSiswa
-│   │   │   ├── hasil/       # Halaman hasil siswa
-│   │   │   ├── kelola-soal/ # Halaman kelola soal
-│   │   │   └── materi/      # Halaman materi
-│   │   └── siswa/           # Dashboard untuk siswa
+│   │   │   ├── hasil/       # Rekap Hasil Siswa
+│   │   │   ├── kelola-soal/ # Bank Soal & Editing
+│   │   │   ├── kuis/        # Manajemen Kuis Guru
+│   │   │   └── materi/      # Publikasi Materi
+│   │   └── siswa/           # Fitur & Halaman Siswa
 │   │       ├── components/  # ContinueCard, ProgressCard, StatCards
-│   │       ├── latihan-soal/# Halaman latihan soal
-│   │       └── materi/      # Halaman materi
-│   ├── login/               # Halaman login
-│   ├── register/            # Halaman registrasi
-│   ├── nilai/               # Halaman nilai
-│   ├── pengaturan/          # Halaman pengaturan
-│   ├── layout.jsx           # Root layout
-│   ├── page.jsx             # Home page
-│   └── globals.css          # Global styles
-└── public/                  # Assets statis
-```
+│   │       ├── kuis/        # Pengerjaan Kuis Dynamic (`/kuis/[id]`)
+│   │       ├── latihan-soal/# Daftar Kuis/Latihan Soal
+│   │       └── materi/      # Modul Baca Materi (`/materi/[id]`)
+│   ├── login/               # Halaman Authentikasi Login
+│   ├── register/            # Halaman Registrasi Akun
+│   ├── nilai/               # Halaman Rekap Nilai Siswa
+│   ├── pengaturan/          # Halaman Pengaturan Akun
+│   ├── layout.jsx           # Root Layout Application
+│   ├── page.jsx             # Landing / Hero Page
+│   └── globals.css          # Global Styling & Theme
+└── lib/
+    └── api.js               # Central API Client Fetcher
 
 ## Memulai
 
