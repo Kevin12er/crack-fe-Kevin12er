@@ -10,7 +10,11 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const previousActiveElement = useRef(null);
-  const isGuru = user?.role === "guru";
+
+  // Normalisasi Pengecekan Role (Mencakup INSTRUCTOR dan GURU)
+  const userRole = String(user?.role || "").toUpperCase();
+  const isGuru = userRole === "INSTRUCTOR" || userRole === "GURU";
+
   const dashboardHref = isGuru ? "/dashboard/guru" : "/dashboard/siswa";
   const materiHref = isAuthenticated
     ? isGuru
@@ -137,11 +141,11 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <div className="text-right text-xs text-secondary">
               <p className="font-semibold text-primary">{user?.name}</p>
-              <p className="capitalize">{user?.role}</p>
+              <p className="capitalize">{isGuru ? "Guru" : "Siswa"}</p>
             </div>
             <button
               onClick={handleLogout}
-              className="font-jakarta font-bold text-sm px-4 py-2 rounded-xl border border-line-strong text-muted hover:text-white hover:border-white transition-all duration-200"
+              className="font-jakarta font-bold text-sm px-4 py-2 rounded-xl border border-line-strong text-muted hover:text-white hover:border-white transition-all duration-200 cursor-pointer"
             >
               Keluar
             </button>
@@ -206,11 +210,11 @@ export default function Navbar() {
             <>
               <div className="font-jakarta text-sm text-secondary">
                 <p className="font-bold text-primary">{user?.name}</p>
-                <p className="capitalize">{user?.role}</p>
+                <p className="capitalize">{isGuru ? "Guru" : "Siswa"}</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="font-jakarta text-left text-sm font-bold text-red-400 hover:text-red-300 transition-colors duration-200"
+                className="font-jakarta text-left text-sm font-bold text-red-400 hover:text-red-300 transition-colors duration-200 cursor-pointer"
               >
                 Keluar
               </button>
