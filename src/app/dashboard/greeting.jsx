@@ -4,25 +4,25 @@ import { useAuth } from "@/app/context/authcontext";
 
 export default function Greetings() {
   const { user } = useAuth();
-  const nama = user?.name || "STUDENT";
+  const nama = user?.name || user?.username || "Siswa";
 
   return (
-    <div className="mt-12 px-4 font-jakarta md:mt-4 md:px-8">
-      <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface/70 p-4 md:flex-row md:items-center md:justify-between md:p-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-sm font-bold text-primary md:text-xl">
-            Selamat datang, {nama} 👋
+    <div className="font-jakarta m-8">
+      <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4 md:flex-row md:items-center md:justify-between md:p-6">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-bold text-primary md:text-xl">
+            Selamat datang, <span className="text-brand">{nama}</span> 👋
           </h1>
-          <span className="text-sm font-bold text-dim md:text-[16px]">
-            Semangat belajar hari ini - kamu sudah 14 hari berturut-turut!
+          <span className="text-xs text-secondary md:text-sm">
+            Semangat belajar hari ini! Pantau terus progres materi dan kuis kamu.
           </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="rounded-3xl border border-brand-hover bg-brand/20 px-4 py-2 text-center text-sm font-bold text-brand">
-            14 hari streak
+          <span className="rounded-xl border border-brand-ring bg-brand-soft px-3 py-1.5 text-xs font-bold text-brand">
+            Siswa Aktif
           </span>
-          <span className="rounded-xl border border-dim/50 bg-base p-2 text-sm md:text-xl">
+          <span className="rounded-xl border border-line bg-base p-2 text-sm md:text-base">
             🔔
           </span>
         </div>
