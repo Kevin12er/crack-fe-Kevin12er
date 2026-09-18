@@ -41,7 +41,7 @@ export default function NilaiSayaPage() {
       return;
     }
 
-    if (user?.role !== "siswa") {
+    if (user?.role !== "STUDENT") {
       router.replace("/dashboard/guru");
     }
   }, [isAuthenticated, user, router]);
@@ -62,7 +62,7 @@ export default function NilaiSayaPage() {
         )
       : 0;
 
-  if (!isAuthenticated || user?.role !== "siswa") {
+  if (!isAuthenticated || user?.role !== "STUDENT") {
     return null;
   }
 

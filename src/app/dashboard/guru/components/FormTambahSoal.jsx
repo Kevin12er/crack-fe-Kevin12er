@@ -55,7 +55,6 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
       // 1. Jika belum ada Quiz di DB, buat 1 Quiz default lebih dulu
       if (!quizIdToUse) {
-        // Cari course valid dari DB
         let courseId = "course-1";
         try {
           const courses = await fetchApi("/courses");
@@ -82,12 +81,16 @@ export default function FormTambahSoal({ onTambahSoal }) {
       }
 
       // 2. Simpan Pertanyaan ke POST /quiz-questions
+      // Payload murni menggunakan 'question' dan enum 'type'
+      const questionPayload = {
+        quizId: quizIdToUse,
+        question: data.pertanyaan,
+        type: tipeSoal === "pg" ? "MULTIPLE_CHOICE" : "ESSAY",
+      };
+
       const newQuestion = await fetchApi("/quiz-questions", {
         method: "POST",
-        body: JSON.stringify({
-          quizId: quizIdToUse,
-          questionText: data.pertanyaan,
-        }),
+        body: JSON.stringify(questionPayload),
       });
 
       // 3. Jika Pilihan Ganda, Simpan Opsi Jawaban ke POST /quiz-options
@@ -115,7 +118,6 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
       alert("Soal berhasil disimpan ke database!");
 
-      // Jalankan callback opsional jika ada
       if (onTambahSoal) {
         onTambahSoal({
           id: newQuestion?.id || Date.now(),

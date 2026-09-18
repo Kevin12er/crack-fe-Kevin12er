@@ -3,22 +3,17 @@
 import Navbar from "@/app/components/layout/Navbar";
 import FormTambahSoal from "./components/FormTambahSoal";
 import TabelHasilSiswa from "./components/TabelHasilSiswa";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
+import { fetchApi } from "@/lib/api";
 
 export default function DashboardGuruPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
-  const [daftarSoal, setDaftarSoal] = useState([
-    {
-      id: 1,
-      pertanyaan: "Hitung hasil dari -12 + 7 - (-5).",
-      tipe: "Pilihan Ganda",
-      mapel: "Operasi Bilangan Bulat",
-    },
-  ]);
+  const [daftarSoal, setDaftarSoal] = useState([]);
+  const [loadingSoal, setLoadingSoal] = useState(true);
 
   const [dataHasil] = useState([
     {
@@ -37,9 +32,48 @@ export default function DashboardGuruPage() {
     },
   ]);
 
-  // Normalisasi role supaya menerima INSTRUCTOR atau GURU dari backend
+  // Normalisasi role
   const userRole = String(user?.role || "").toUpperCase();
   const isGuru = userRole === "INSTRUCTOR" || userRole === "GURU";
+
+  // Fungsi untuk mengambil daftar soal berdasarkan Kuis yang ada di backend
+  const loadQuestions = useCallback(async () => {
+    try {
+      setLoadingSoal(true);
+
+      // 1. Ambil daftar kuis dari GET /quizzes
+      const quizzes = await fetchApi("/quizzes");
+      const quizList = Array.isArray(quizzes) ? quizzes : [];
+
+      let allQuestions = [];
+
+      // 2. Loop setiap kuis untuk mengambil soal-soalnya via GET /quiz-questions/quiz/:quizId
+      for (const quiz of quizList) {
+        if (quiz?.id) {
+          try {
+            const qData = await fetchApi(`/quiz-questions/quiz/${quiz.id}`);
+            const questions = Array.isArray(qData) ? qData : [];
+
+            // Sisipkan data kuis ke tiap soal agar nama mapel/kuis bisa terbaca di UI
+            const formattedQuestions = questions.map((q) => ({
+              ...q,
+              quizTitle: quiz.title || quiz.course?.title || "Bank Soal",
+            }));
+
+            allQuestions = [...allQuestions, ...formattedQuestions];
+          } catch (qErr) {
+            console.warn(`Gagal fetch soal untuk quiz ${quiz.id}:`, qErr);
+          }
+        }
+      }
+
+      setDaftarSoal(allQuestions);
+    } catch (err) {
+      console.warn("Gagal mengambil kuis:", err);
+    } finally {
+      setLoadingSoal(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -49,62 +83,66 @@ export default function DashboardGuruPage() {
 
     if (!isGuru) {
       router.replace("/dashboard/siswa");
+      return;
     }
-  }, [isAuthenticated, isGuru, router]);
+
+    loadQuestions();
+  }, [isAuthenticated, isGuru, router, loadQuestions]);
 
   if (!isAuthenticated || !isGuru) {
     return null;
   }
 
-  const handleTambahSoal = (soalBaru) => {
-    setDaftarSoal((prev) => [soalBaru, ...prev]);
+  // Dipanggil saat FormTambahSoal selesai menyimpan soal baru
+  const handleTambahSoal = () => {
+    loadQuestions();
   };
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-base text-primary font-jakarta p-4 md:p-8">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <div className="min-h-screen bg-base p-4 text-primary font-jakarta md:p-8">
+        <div className="mx-auto max-w-6xl space-y-8">
           {/* Header Dashboard Guru */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-6">
+          <div className="flex flex-col justify-between gap-4 border-b border-line pb-6 md:flex-row md:items-center">
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-primary">
+              <h1 className="text-2xl font-extrabold text-primary md:text-3xl">
                 Dashboard <span className="text-brand">Guru</span>
               </h1>
-              <p className="text-sm text-secondary mt-1">
+              <p className="mt-1 text-sm text-secondary">
                 Kelola evaluasi, bank soal, dan pantau hasil ujian siswa SMK.
               </p>
             </div>
             <div>
-              <span className="text-xs bg-brand-soft text-brand border border-brand-ring px-3 py-1.5 rounded-lg font-semibold">
+              <span className="rounded-lg border border-brand-ring bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand">
                 Status: Pengajar
               </span>
             </div>
           </div>
 
           {/* Ringkasan Statistik Guru */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-surface border border-line rounded-2xl p-5">
-              <p className="text-xs text-secondary font-semibold uppercase tracking-wider">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-line bg-surface p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 Total Soal Buatan
               </p>
-              <h3 className="text-2xl font-bold text-brand mt-1">
+              <h3 className="mt-1 text-2xl font-bold text-brand">
                 {daftarSoal.length} Soal
               </h3>
             </div>
-            <div className="bg-surface border border-line rounded-2xl p-5">
-              <p className="text-xs text-secondary font-semibold uppercase tracking-wider">
+            <div className="rounded-2xl border border-line bg-surface p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 Siswa Mengerjakan
               </p>
-              <h3 className="text-2xl font-bold text-primary mt-1">
+              <h3 className="mt-1 text-2xl font-bold text-primary">
                 {dataHasil.length} Siswa
               </h3>
             </div>
-            <div className="bg-surface border border-line rounded-2xl p-5">
-              <p className="text-xs text-secondary font-semibold uppercase tracking-wider">
+            <div className="rounded-2xl border border-line bg-surface p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 Rata-rata Nilai
               </p>
-              <h3 className="text-2xl font-bold text-av-amber mt-1">
+              <h3 className="mt-1 text-2xl font-bold text-av-amber">
                 {dataHasil.length > 0
                   ? Math.round(
                       dataHasil.reduce((acc, curr) => acc + curr.nilai, 0) /
@@ -115,35 +153,58 @@ export default function DashboardGuruPage() {
             </div>
           </div>
 
-          {/* Section Utama: Form Tambah Soal (Kiri) & Tabel Rekap Nilai (Kanan) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Section Utama: Form & Rekap Bank Soal */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
             <div className="lg:col-span-5">
               <FormTambahSoal onTambahSoal={handleTambahSoal} />
             </div>
 
-            <div className="lg:col-span-7 space-y-6">
+            <div className="space-y-6 lg:col-span-7">
               {/* Tabel Hasil Pengerjaan Siswa */}
               <TabelHasilSiswa dataHasil={dataHasil} />
 
               {/* Ringkasan Bank Soal Terakhir */}
-              <div className="bg-surface border border-line rounded-2xl p-6">
-                <h3 className="text-md font-bold text-primary mb-3">
+              <div className="rounded-2xl border border-line bg-surface p-6">
+                <h3 className="text-md mb-3 font-bold text-primary">
                   Bank Soal Terakhir Ditambahkan
                 </h3>
                 <div className="space-y-2">
-                  {daftarSoal.slice(0, 3).map((item, idx) => (
-                    <div
-                      key={item.id}
-                      className="p-3 bg-base border border-line rounded-xl text-xs flex justify-between items-center"
-                    >
-                      <span className="font-medium truncate max-w-62.5">
-                        {idx + 1}. {item.pertanyaan}
-                      </span>
-                      <span className="text-brand font-semibold px-2 py-0.5 bg-brand-soft border border-brand-ring rounded">
-                        {item.mapel}
-                      </span>
+                  {loadingSoal ? (
+                    <div className="py-4 text-center text-xs font-medium text-secondary">
+                      Memuat bank soal...
                     </div>
-                  ))}
+                  ) : daftarSoal.length > 0 ? (
+                    daftarSoal
+                      .slice(-5)
+                      .reverse()
+                      .map((item, idx) => {
+                        const teksPertanyaan =
+                          item.question ||
+                          item.pertanyaan ||
+                          "Soal Tanpa Judul";
+
+                        const namaPelajarannya =
+                          item.quizTitle || item.mapel || "Bank Soal Umum";
+
+                        return (
+                          <div
+                            key={item.id || idx}
+                            className="flex items-center justify-between gap-2 rounded-xl border border-line bg-base p-3 text-xs"
+                          >
+                            <span className="max-w-62.5 truncate font-medium md:max-w-[320px]">
+                              {idx + 1}. {teksPertanyaan}
+                            </span>
+                            <span className="shrink-0 rounded border border-brand-ring bg-brand-soft px-2 py-0.5 font-semibold text-brand">
+                              {namaPelajarannya}
+                            </span>
+                          </div>
+                        );
+                      })
+                  ) : (
+                    <div className="py-4 text-center text-xs text-secondary">
+                      Belum ada soal di bank soal.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
