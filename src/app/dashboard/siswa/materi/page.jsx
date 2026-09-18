@@ -1,6 +1,32 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import MateriCard from "./components/MateriCards";
+import { fetchApi } from "@/lib/api";
 
 export default function MateriPage() {
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const getMaterials = async () => {
+      try {
+        setLoading(true);
+        // Panggil endpoint GET /materials
+        const data = await fetchApi("/materials");
+        setMaterials(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Gagal mengambil data materi:", err);
+        setError("Gagal memuat materi pembelajaran. Pastikan koneksi ke server aman.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getMaterials();
+  }, []);
+
   return (
     <div className="px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto w-full max-w-6xl">
@@ -24,27 +50,43 @@ export default function MateriPage() {
           </div>
         </section>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-          <MateriCard
-            icon="🔢"
-            nama="Operasi Hitung Bilangan Bulat Positif dan Negatif"
-            kelas="Kelas X"
-            materi={6}
-            jam={2.5}
-            progress={20}
-            status="start"
-          />
+        {/* State Loading */}
+        {loading && (
+          <div className="mt-8 text-center text-sm font-semibold text-secondary py-12">
+            Memuat daftar materi...
+          </div>
+        )}
 
-          <MateriCard
-            icon="➗"
-            nama="Operasi Hitung dalam Bentuk Pecahan"
-            kelas="Kelas X"
-            materi={5}
-            jam={2}
-            progress={0}
-            status="locked"
-          />
-        </div>
+        {/* State Error */}
+        {error && (
+          <div className="mt-8 rounded-2xl border border-av-red/30 bg-av-red/10 p-4 text-center text-xs font-semibold text-av-red">
+            {error}
+          </div>
+        )}
+
+        {/* Display Data Materi */}
+        {!loading && !error && (
+          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+            {materials.length > 0 ? (
+              materials.map((item, index) => (
+                <MateriCard
+                  key={item.id || index}
+                  icon={item.icon || "📚"}
+                  nama={item.title || item.nama || "Materi Pembelajaran"}
+                  kelas={item.kelas || item.course?.title || "Umum"}
+                  materi={item.materiCount || item.lessonsCount || 1}
+                  jam={item.duration || 1}
+                  progress={item.progress || 0}
+                  status={item.status || "start"}
+                />
+              ))
+            ) : (
+              <div className="col-span-full py-12 text-center text-sm text-secondary">
+                Belum ada materi pembelajaran yang tersedia saat ini.
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
