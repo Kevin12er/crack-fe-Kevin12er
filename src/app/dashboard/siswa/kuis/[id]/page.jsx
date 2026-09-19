@@ -4,10 +4,12 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/app/components/layout/Navbar";
 import { fetchApi } from "@/lib/api";
+import { useAuth } from "@/app/context/authcontext";
 
 export default function KerjakanKuisPage({ params }) {
   const resolvedParams = use(params);
   const quizId = resolvedParams.id;
+  const { user } = useAuth(); // Ambil data user yang sedang login
 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -70,26 +72,26 @@ export default function KerjakanKuisPage({ params }) {
           ? Math.round((totalCorrect / questions.length) * 100)
           : 100;
 
-      // 2. Kirim data hasil pengerjaan kuis ke Backend NestJS
+      // 2. Kirim data hasil pengerjaan kuis ke Backend NestJS dengan userId
+      const payload = {
+        quizId: quizId,
+        score: finalScore,
+        userId: user?.id,
+        totalQuestions: questions.length,
+        correctAnswers: totalCorrect,
+      };
+
       try {
-        await fetchApi("/quiz-attempts", {
+        await fetchApi("/results", {
           method: "POST",
-          body: JSON.stringify({
-            quizId: quizId,
-            score: finalScore,
-            totalQuestions: questions.length,
-            correctAnswers: totalCorrect,
-          }),
+          body: JSON.stringify(payload),
         });
       } catch (err) {
-        // Fallback jika backend menggunakan endpoint /results
+        // Fallback jika backend menggunakan endpoint /quiz-attempts
         try {
-          await fetchApi("/results", {
+          await fetchApi("/quiz-attempts", {
             method: "POST",
-            body: JSON.stringify({
-              quizId: quizId,
-              score: finalScore,
-            }),
+            body: JSON.stringify(payload),
           });
         } catch (fallbackErr) {
           console.warn("Gagal menyimpan hasil nilai ke DB:", fallbackErr);
@@ -99,7 +101,7 @@ export default function KerjakanKuisPage({ params }) {
       setScore(finalScore);
       setSubmitted(true);
     } catch (err) {
-      alert("Terjadi kesalahan saat mengiring jawaban: " + err.message);
+      alert("Terjadi kesalahan saat mengirim jawaban: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -131,10 +133,16 @@ export default function KerjakanKuisPage({ params }) {
               <p className="text-xs text-secondary">
                 Jawaban dan nilai kamu telah resmi tersimpan ke sistem database.
               </p>
-              <div className="pt-4">
+              <div className="pt-4 flex justify-center gap-3">
+                <Link
+                  href="/dashboard/siswa/nilai"
+                  className="rounded-xl bg-brand px-6 py-2.5 text-xs font-bold text-primary hover:bg-brand-hover transition-all"
+                >
+                  Lihat Halaman Nilai Saya
+                </Link>
                 <Link
                   href="/dashboard/siswa/latihan-soal"
-                  className="rounded-xl bg-brand px-6 py-2.5 text-xs font-bold text-primary hover:bg-brand-hover transition-all"
+                  className="rounded-xl border border-line bg-base px-6 py-2.5 text-xs font-bold text-secondary hover:text-primary transition-all"
                 >
                   Kembali ke Daftar Soal
                 </Link>

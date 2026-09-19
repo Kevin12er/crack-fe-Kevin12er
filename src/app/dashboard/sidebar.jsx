@@ -22,7 +22,7 @@ const navItems = [
     icon: "✏️",
   },
   {
-    href: "/nilai",
+    href: "/dashboard/siswa/nilai",
     label: "Nilai Saya",
     icon: "📊",
   },
