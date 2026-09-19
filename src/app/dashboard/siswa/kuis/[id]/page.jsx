@@ -4,12 +4,10 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/app/components/layout/Navbar";
 import { fetchApi } from "@/lib/api";
-import { useAuth } from "@/app/context/authcontext";
 
 export default function KerjakanKuisPage({ params }) {
   const resolvedParams = use(params);
   const quizId = resolvedParams.id;
-  const { user } = useAuth(); // Ambil data user yang sedang login
 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -57,50 +55,36 @@ export default function KerjakanKuisPage({ params }) {
     try {
       setIsSubmitting(true);
 
-      // 1. Hitung total jawaban benar
-      let totalCorrect = 0;
-      questions.forEach((q) => {
-        const selectedOptId = answers[q.id];
-        const selectedOpt = q.options?.find((o) => o.id === selectedOptId);
-        if (selectedOpt && selectedOpt.isCorrect) {
-          totalCorrect++;
-        }
-      });
+      // Susun format answers sesuai DTO NestJS
+      const formattedAnswers = Object.entries(answers).map(
+        ([questionId, selectedOptionId]) => ({
+          questionId,
+          selectedOptionId,
+        })
+      );
 
-      const finalScore =
-        questions.length > 0
-          ? Math.round((totalCorrect / questions.length) * 100)
-          : 100;
-
-      // 2. Kirim data hasil pengerjaan kuis ke Backend NestJS dengan userId
       const payload = {
         quizId: quizId,
-        score: finalScore,
-        userId: user?.id,
-        totalQuestions: questions.length,
-        correctAnswers: totalCorrect,
+        answers: formattedAnswers,
       };
 
-      try {
-        await fetchApi("/results", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-      } catch (err) {
-        // Fallback jika backend menggunakan endpoint /quiz-attempts
-        try {
-          await fetchApi("/quiz-attempts", {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
-        } catch (fallbackErr) {
-          console.warn("Gagal menyimpan hasil nilai ke DB:", fallbackErr);
-        }
-      }
+      console.log("[SUBMIT] Payload dikirim ke NestJS:", payload);
+
+      const res = await fetchApi("/quiz-attempts", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      console.log("[SUBMIT] Response dari NestJS:", res);
+
+      // Pembulatan angka agar nilai desimal seperti 33.33333333 menjadi 33
+      const rawScore = res?.score ?? 0;
+      const finalScore = Math.round(Number(rawScore));
 
       setScore(finalScore);
       setSubmitted(true);
     } catch (err) {
+      console.error("Gagal menyimpan kuis:", err);
       alert("Terjadi kesalahan saat mengirim jawaban: " + err.message);
     } finally {
       setIsSubmitting(false);
@@ -129,7 +113,9 @@ export default function KerjakanKuisPage({ params }) {
             <div className="rounded-3xl border border-line bg-surface p-8 text-center space-y-4 shadow-sm">
               <h2 className="text-2xl font-extrabold text-primary">Kuis Selesai!</h2>
               <p className="text-xs text-secondary">Nilai Pengerjaan Kamu:</p>
-              <div className="text-5xl font-black text-brand">{score}</div>
+              <div className="text-5xl font-black text-brand">
+                {score !== null ? Math.round(Number(score)) : 0}
+              </div>
               <p className="text-xs text-secondary">
                 Jawaban dan nilai kamu telah resmi tersimpan ke sistem database.
               </p>

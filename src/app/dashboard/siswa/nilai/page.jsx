@@ -15,12 +15,11 @@ export default function NilaiSiswaDashboardPage() {
   const [selectedTopik, setSelectedTopik] = useState("Semua");
   const [loading, setLoading] = useState(true);
 
-  // Load Data Nilai Dinamis dari Backend API NestJS
   const loadNilaiSiswa = useCallback(async () => {
     try {
       setLoading(true);
 
-      // Fetch riwayat hasil kuis dan daftar kuis
+      // Ambil data hasil kuis dan daftar kuis dari backend NestJS
       const [resultsData, attemptsData, quizzesData] = await Promise.all([
         fetchApi("/results").catch(() => []),
         fetchApi("/quiz-attempts").catch(() => []),
@@ -31,29 +30,24 @@ export default function NilaiSiswaDashboardPage() {
       const rawAttempts = Array.isArray(attemptsData) ? attemptsData : [];
       const quizList = Array.isArray(quizzesData) ? quizzesData : [];
 
-      const allResults = [...rawResults, ...rawAttempts];
+      // Gabungkan riwayat dari /results dan /quiz-attempts
+      const allHistory = [...rawResults, ...rawAttempts];
 
       const formattedData = quizList.map((quiz) => {
-        const userResult = allResults.find((r) => {
-          const matchQuiz =
-            String(r.quizId || r.quiz?.id) === String(quiz.id);
-
-          const matchUser =
-            !r.userId ||
-            !user?.id ||
-            String(r.userId) === String(user?.id) ||
-            String(r.user?.id) === String(user?.id);
-
-          return matchQuiz && matchUser;
+        // Cari riwayat pengerjaan yang cocok dengan ID Kuis
+        const userResult = allHistory.find((r) => {
+          const rQuizId = r.quizId || r.quiz?.id;
+          return String(rQuizId) === String(quiz.id);
         });
 
         const topikName =
           quiz.course?.name || quiz.course?.title || "Matematika Dasar SMK";
 
         const isDone = Boolean(userResult);
-        const rawScore =
-          userResult?.score ?? userResult?.nilai ?? userResult?.finalScore;
-        const score = isDone ? Number(rawScore || 0) : 0;
+        
+        // Pembulatan angka agar 33.33333333333333 menjadi 33
+        const rawScore = userResult?.score ?? userResult?.nilai ?? userResult?.scoreObtained ?? 0;
+        const score = isDone ? Math.round(Number(rawScore)) : 0;
 
         const rawDate = userResult?.createdAt || userResult?.updatedAt;
         const formattedDate = rawDate
@@ -81,7 +75,7 @@ export default function NilaiSiswaDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (!isHydrated) return;
