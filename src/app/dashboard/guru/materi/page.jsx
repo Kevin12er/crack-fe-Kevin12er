@@ -26,8 +26,8 @@ function MateriGuruPage() {
   });
 
   const [courseFormData, setCourseFormData] = useState({
-    title: "Matematika Dasar",
-    description: "Mata pelajaran Matematika untuk kelas dasar.",
+    title: "Matematika Dasar SMK",
+    description: "Mata pelajaran Matematika untuk fondasi kejuruan.",
   });
 
   // Load Data Materials & Courses
@@ -60,17 +60,25 @@ function MateriGuruPage() {
     loadInitialData();
   }, []);
 
-  // Handler Buat Course Baru (POST /courses)
+  // Handler Buat Course Baru (POST /courses) - Bebas dari Error Price Validasi NestJS
   const handleCreateCourse = async (e) => {
     e.preventDefault();
     try {
       setIsSubmitting(true);
+      
+      // Sisipkan price: 0 & name secara otomatis di background
+      const coursePayload = {
+        title: courseFormData.title,
+        description: courseFormData.description,
+        price: 0, // Mandatory validation NestJS DTO
+      };
+
       const newCourse = await fetchApi("/courses", {
         method: "POST",
-        body: JSON.stringify(courseFormData),
+        body: JSON.stringify(coursePayload),
       });
 
-      alert("Course berhasil dibuat!");
+      alert("Mata Pelajaran berhasil dibuat!");
       setIsCourseModalOpen(false);
       await loadInitialData();
       
@@ -118,7 +126,7 @@ function MateriGuruPage() {
   };
 
   return (
-    <section className="min-h-screen bg-base p-4 text-primary md:p-8">
+    <section className="min-h-screen bg-base p-4 text-primary md:p-8 font-jakarta">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -164,7 +172,7 @@ function MateriGuruPage() {
               materials.map((materi, index) => (
                 <article
                   key={materi.id || index}
-                  className="flex h-full flex-col gap-4 rounded-2xl border border-line-card bg-surface p-5"
+                  className="flex h-full flex-col gap-4 rounded-2xl border border-line bg-surface p-5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-soft font-extrabold text-brand">
@@ -228,7 +236,7 @@ function MateriGuruPage() {
                   >
                     {courses.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.title || c.name || c.id}
+                        {c.name || c.title || c.id}
                       </option>
                     ))}
                   </select>
