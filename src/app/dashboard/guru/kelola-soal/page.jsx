@@ -63,13 +63,6 @@ export default function KelolaSoalPage() {
     loadData();
   }, [loadData]);
 
-  // Handler Hapus Soal secara lokal / UI
-  const handleHapusSoal = (id) => {
-    if (confirm("Apakah Anda yakin ingin menghapus soal ini dari tampilan?")) {
-      setDaftarSoal((prev) => prev.filter((item) => item.id !== id));
-    }
-  };
-
   // Handler Simpan Edit Soal secara lokal / UI
   const handleSaveEdit = (e) => {
     e.preventDefault();
@@ -177,12 +170,6 @@ export default function KelolaSoalPage() {
                       className="px-3 py-1.5 text-xs font-semibold bg-base border border-line hover:border-brand rounded-lg transition-colors cursor-pointer"
                     >
                       Edit
-                    </button>
-                    <button
-                      onClick={() => handleHapusSoal(item.id)}
-                      className="px-3 py-1.5 text-xs font-semibold bg-red-950/40 text-av-red border border-red-900 rounded-lg hover:bg-red-900/40 transition-colors cursor-pointer"
-                    >
-                      Hapus
                     </button>
                   </div>
                 </div>
