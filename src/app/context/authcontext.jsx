@@ -17,8 +17,9 @@ export function AuthProvider({ children }) {
       }
     } catch (error) {
       console.error("Failed to read auth session:", error);
+    } finally {
+      setIsHydrated(true); 
     }
-    setIsHydrated(true);
   }, []);
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
     } else {
       localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem("token"); // Bersihkan JWT token juga
+      localStorage.removeItem("token"); 
     }
   }, [user, isHydrated]);
 
@@ -54,6 +55,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem(STORAGE_KEY);
     setUser(null);
   };
 
@@ -72,12 +74,14 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       isAuthenticated: Boolean(user?.isAuthenticated),
+      isHydrated, // <--- komponen penjelajah bisa tahu status pembacaan storage
+      loading: !isHydrated, // <--- flag loading
       login,
       register,
       logout,
       updateProfile,
     }),
-    [user],
+    [user, isHydrated],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,9 +7,13 @@ import { useAuth } from "@/app/context/authcontext";
 
 export default function SiswaLayout({ children }) {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isHydrated } = useAuth();
 
   useEffect(() => {
+    // 1. TAHAN REDIRECT SELAMA STORAGE BELUM SELESAI DIBACA (F5/REFRESH)
+    if (!isHydrated) return;
+
+    // 2. Jika storage sudah selesai dibaca dan user memang belum login, baru lempar ke /login
     if (!isAuthenticated) {
       router.replace("/login");
       return;
@@ -18,8 +22,18 @@ export default function SiswaLayout({ children }) {
     if (user?.role !== "STUDENT") {
       router.replace("/dashboard/guru");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isHydrated, isAuthenticated, user, router]);
 
+  // Tampilkan layar loading ramah UI selama AuthContext sedang membaca storage saat F5/Refresh
+  if (!isHydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-base font-jakarta text-xs font-semibold text-secondary">
+        Memverifikasi Sesi LearnBridge...
+      </div>
+    );
+  }
+
+  // Jika belum authenticated atau role tidak sesuai setelah hydrated, tahan render
   if (!isAuthenticated || user?.role !== "STUDENT") {
     return null;
   }

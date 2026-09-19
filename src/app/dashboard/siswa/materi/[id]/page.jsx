@@ -2,32 +2,50 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/authcontext";
 import { fetchApi } from "@/lib/api";
 
 export default function DetailMateriPage({ params }) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const materialId = resolvedParams.id;
+
+  const { user, loading: authLoading } = useAuth(); // Import auth state
 
   const [material, setMaterial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // 1. Tahan eksekusi jika auth masih dalam proses verifikasi token (misal saat F5 / Refresh)
+    if (authLoading) return;
+
+    // 2. Jika auth selesai dan user ternyata tidak ada, baru ke dashboard
+    if (!user) {
+      router.push("/dashboard");
+      return;
+    }
+
+    // 3. Ambil data materi dari backend API
     const getMaterialDetail = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch seluruh daftar materi
-        const data = await fetchApi("/materials");
-        const materialsList = Array.isArray(data) ? data : [];
+        // Coba ambil langsung dari endpoint detail jika ada, atau fallback ke list
+        let found = null;
+        try {
+          found = await fetchApi(`/materials/${materialId}`);
+        } catch {
+          const data = await fetchApi("/materials");
+          const materialsList = Array.isArray(data) ? data : [];
+          found = materialsList.find(
+            (m) => String(m.id) === String(materialId)
+          );
+        }
 
-        // Cari materi berdasarkan ID di rute
-        const found = materialsList.find(
-          (m) => String(m.id) === String(materialId)
-        );
-
-        if (found) {
+        if (found && found.id) {
           setMaterial(found);
         } else {
           setError("Materi pembelajaran tidak ditemukan.");
@@ -43,7 +61,16 @@ export default function DetailMateriPage({ params }) {
     if (materialId) {
       getMaterialDetail();
     }
-  }, [materialId]);
+  }, [materialId, user, authLoading, router]);
+
+  // Tampilkan layar loading ramah UI jika Auth sedang memverifikasi token saat Refresh
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center font-jakarta text-xs text-secondary">
+        Memverifikasi sesi pengguna...
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-6 font-jakarta md:px-8 md:py-8">
@@ -52,7 +79,7 @@ export default function DetailMateriPage({ params }) {
         <div>
           <Link
             href="/dashboard/siswa/materi"
-            className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2 text-xs font-bold text-primary transition-colors hover:bg-base"
+            className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2 text-xs font-bold text-brand transition-colors hover:bg-base"
           >
             ← Kembali ke Daftar Materi
           </Link>
@@ -77,14 +104,14 @@ export default function DetailMateriPage({ params }) {
           <article className="flex flex-col gap-6 rounded-3xl border border-line bg-surface p-6 shadow-sm md:p-10">
             <header className="border-b border-line pb-5">
               <span className="mb-3 inline-block rounded-full bg-brand/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand">
-                {material.course?.title || "Materi Matematika"}
+                {material.course?.title || material.course?.name || "Materi Matematika"}
               </span>
-              <h1 className="text-2xl font-extrabold leading-tight text-primary md:text-4xl">
+              <h1 className="text-2xl font-extrabold leading-tight text-brand md:text-4xl">
                 {material.title}
               </h1>
             </header>
 
-            <div className="whitespace-pre-wrap text-sm leading-relaxed text-secondary md:text-base">
+            <div className="whitespace-pre-wrap text-sm leading-relaxed text-primary">
               {material.content}
             </div>
 
