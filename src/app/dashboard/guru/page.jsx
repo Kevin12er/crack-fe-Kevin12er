@@ -15,46 +15,30 @@ export default function DashboardGuruPage() {
   const [daftarSoal, setDaftarSoal] = useState([]);
   const [loadingSoal, setLoadingSoal] = useState(true);
 
-  const [dataHasil] = useState([
-    {
-      id: 1,
-      nama: "Budi Santoso",
-      kelas: "XII RPL 1",
-      mapel: "Operasi Bilangan Bulat",
-      nilai: 85,
-    },
-    {
-      id: 2,
-      nama: "Siti Aminah",
-      kelas: "XII RPL 1",
-      mapel: "Operasi Pecahan",
-      nilai: 60,
-    },
-  ]);
+  // State dynamic untuk rekap hasil pengerjaan siswa
+  const [dataHasil, setDataHasil] = useState([]);
+  const [loadingHasil, setLoadingHasil] = useState(true);
 
   // Normalisasi role
   const userRole = String(user?.role || "").toUpperCase();
   const isGuru = userRole === "INSTRUCTOR" || userRole === "GURU";
 
-  // Fungsi untuk mengambil daftar soal berdasarkan Kuis yang ada di backend
+  // 1. Fungsi mengambil daftar soal dari backend
   const loadQuestions = useCallback(async () => {
     try {
       setLoadingSoal(true);
 
-      // 1. Ambil daftar kuis dari GET /quizzes
       const quizzes = await fetchApi("/quizzes");
       const quizList = Array.isArray(quizzes) ? quizzes : [];
 
       let allQuestions = [];
 
-      // 2. Loop setiap kuis untuk mengambil soal-soalnya via GET /quiz-questions/quiz/:quizId
       for (const quiz of quizList) {
         if (quiz?.id) {
           try {
             const qData = await fetchApi(`/quiz-questions/quiz/${quiz.id}`);
             const questions = Array.isArray(qData) ? qData : [];
 
-            // Sisipkan data kuis ke tiap soal agar nama mapel/kuis bisa terbaca di UI
             const formattedQuestions = questions.map((q) => ({
               ...q,
               quizTitle: quiz.title || quiz.course?.title || "Bank Soal",
@@ -75,6 +59,31 @@ export default function DashboardGuruPage() {
     }
   }, []);
 
+  // 2. Fungsi mengambil rekap hasil ujian siswa dari GET /results
+  const loadResults = useCallback(async () => {
+    try {
+      setLoadingHasil(true);
+      const results = await fetchApi("/results");
+      const resultsList = Array.isArray(results) ? results : [];
+
+      // Format data agar sesuai dengan props yang dibutuhkan TabelHasilSiswa
+      const formattedResults = resultsList.map((res, idx) => ({
+        id: res.id || idx + 1,
+        nama: res.student?.name || res.studentName || "Siswa LearnBridge",
+        kelas: res.student?.class || "SMK Matematika",
+        mapel: res.course?.name || res.quiz?.title || "Kuis Evaluasi",
+        nilai: typeof res.score === "number" ? res.score : 0,
+      }));
+
+      setDataHasil(formattedResults);
+    } catch (err) {
+      console.warn("Gagal mengambil hasil ujian siswa:", err);
+      setDataHasil([]);
+    } finally {
+      setLoadingHasil(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login");
@@ -87,7 +96,8 @@ export default function DashboardGuruPage() {
     }
 
     loadQuestions();
-  }, [isAuthenticated, isGuru, router, loadQuestions]);
+    loadResults();
+  }, [isAuthenticated, isGuru, router, loadQuestions, loadResults]);
 
   if (!isAuthenticated || !isGuru) {
     return null;
@@ -135,7 +145,7 @@ export default function DashboardGuruPage() {
                 Siswa Mengerjakan
               </p>
               <h3 className="mt-1 text-2xl font-bold text-primary">
-                {dataHasil.length} Siswa
+                {loadingHasil ? "..." : `${dataHasil.length} Siswa`}
               </h3>
             </div>
             <div className="rounded-2xl border border-line bg-surface p-5">
@@ -143,7 +153,9 @@ export default function DashboardGuruPage() {
                 Rata-rata Nilai
               </p>
               <h3 className="mt-1 text-2xl font-bold text-av-amber">
-                {dataHasil.length > 0
+                {loadingHasil
+                  ? "..."
+                  : dataHasil.length > 0
                   ? Math.round(
                       dataHasil.reduce((acc, curr) => acc + curr.nilai, 0) /
                         dataHasil.length
@@ -161,7 +173,7 @@ export default function DashboardGuruPage() {
 
             <div className="space-y-6 lg:col-span-7">
               {/* Tabel Hasil Pengerjaan Siswa */}
-              <TabelHasilSiswa dataHasil={dataHasil} />
+              <TabelHasilSiswa dataHasil={dataHasil} loading={loadingHasil} />
 
               {/* Ringkasan Bank Soal Terakhir */}
               <div className="rounded-2xl border border-line bg-surface p-6">
@@ -179,6 +191,7 @@ export default function DashboardGuruPage() {
                       .reverse()
                       .map((item, idx) => {
                         const teksPertanyaan =
+                          item.questionText ||
                           item.question ||
                           item.pertanyaan ||
                           "Soal Tanpa Judul";
