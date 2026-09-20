@@ -174,7 +174,7 @@ export default function HasilUjianGuruPage() {
 
         {/* Tabel Detail */}
         <div className="bg-surface border border-line rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto max-h-[450px] overflow-y-auto">
+          <div className="overflow-x-auto max-h-112.5 overflow-y-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-base border-b border-line text-xs font-semibold text-secondary uppercase tracking-wider sticky top-0 z-10">
                 <tr>
