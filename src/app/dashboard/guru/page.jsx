@@ -59,21 +59,50 @@ export default function DashboardGuruPage() {
     }
   }, []);
 
-  // 2. Fungsi mengambil rekap hasil ujian siswa dari GET /results
+  // Fungsi mengambil rekap hasil ujian siswa
   const loadResults = useCallback(async () => {
     try {
       setLoadingHasil(true);
-      const results = await fetchApi("/results");
-      const resultsList = Array.isArray(results) ? results : [];
 
-      // Format data agar sesuai dengan props yang dibutuhkan TabelHasilSiswa
-      const formattedResults = resultsList.map((res, idx) => ({
-        id: res.id || idx + 1,
-        nama: res.student?.name || res.studentName || "Siswa LearnBridge",
-        kelas: res.student?.class || "SMK Matematika",
-        mapel: res.course?.name || res.quiz?.title || "Kuis Evaluasi",
-        nilai: typeof res.score === "number" ? res.score : 0,
-      }));
+      const [results, attempts] = await Promise.all([
+        fetchApi("/results").catch(() => []),
+        fetchApi("/quiz-attempts").catch(() => []),
+      ]);
+
+      const resultsList = Array.isArray(results) ? results : [];
+      const attemptsList = Array.isArray(attempts) ? attempts : [];
+
+      // 1. Definisikan rawAllData terlebih dahulu
+      const rawAllData = [...resultsList, ...attemptsList];
+
+      // 2. Format data menggunakan rawAllData yang sudah didefinisikan
+      const formattedResults = rawAllData.map((res, idx) => {
+        const studentObj = res.student || res.user;
+        const namaSiswa = studentObj?.name || res.studentName || res.userName || "Siswa";
+
+        // Mata Pelajaran / Course (Contoh: "Matematika SMK")
+        const namaMapel =
+          res.course?.name ||
+          res.quiz?.course?.name ||
+          "Matematika SMK";
+
+        // Nama Kuis / Evaluasi (Contoh: "Bank Soal Evaluasi - Aljabar Dasar")
+        const judulKuis =
+          res.quiz?.title ||
+          res.quizTitle ||
+          res.title ||
+          "Bank Soal Evaluasi";
+
+        const rawScore = res.score ?? res.nilai ?? res.scoreObtained ?? 0;
+
+        return {
+          id: res.id || idx + 1,
+          nama: namaSiswa,
+          mapel: namaMapel,
+          judulKuis: judulKuis,
+          nilai: typeof rawScore === "number" ? Math.round(rawScore) : 0,
+        };
+      });
 
       setDataHasil(formattedResults);
     } catch (err) {
@@ -107,6 +136,9 @@ export default function DashboardGuruPage() {
   const handleTambahSoal = () => {
     loadQuestions();
   };
+
+  // Hitung jumlah siswa UNIK untuk kartu statistik
+  const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
 
   return (
     <>
@@ -145,7 +177,7 @@ export default function DashboardGuruPage() {
                 Siswa Mengerjakan
               </p>
               <h3 className="mt-1 text-2xl font-bold text-primary">
-                {loadingHasil ? "..." : `${dataHasil.length} Siswa`}
+                {loadingHasil ? "..." : `${jumlahSiswaUnik} Siswa`}
               </h3>
             </div>
             <div className="rounded-2xl border border-line bg-surface p-5">

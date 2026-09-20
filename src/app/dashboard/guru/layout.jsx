@@ -7,27 +7,26 @@ import Navbar from "@/app/components/layout/Navbar";
 
 export default function DashboardGuruLayout({ children }) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, isLoading } = useAuth();
+
+  // Gunakan fallback jika properti bernama loading atau isLoading
+  const isAuthChecking = authLoading || isLoading;
 
   useEffect(() => {
-    // 1. Tunggu hingga proses pembacaan localStorage di AuthContext selesai
-    if (isLoading) return;
+    if (isAuthChecking) return;
 
-    // 2. Jika tidak terautentikasi, baru lempar ke /login
     if (!isAuthenticated) {
       router.replace("/login");
       return;
     }
 
-    // 3. Cek role dengan toleransi huruf besar/kecil
     const userRole = String(user?.role || "").toUpperCase();
     if (userRole !== "INSTRUCTOR" && userRole !== "GURU") {
       router.replace("/dashboard/siswa");
     }
-  }, [isAuthenticated, user, isLoading, router]);
+  }, [isAuthenticated, user, isAuthChecking, router]);
 
-  // Tampilkan loading sebentar saat memeriksa session
-  if (isLoading) {
+  if (isAuthChecking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-base text-secondary text-sm font-semibold">
         Memeriksa sesi pengguna...
@@ -42,6 +41,7 @@ export default function DashboardGuruLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-base text-primary font-jakarta">
+
       <main>{children}</main>
     </div>
   );

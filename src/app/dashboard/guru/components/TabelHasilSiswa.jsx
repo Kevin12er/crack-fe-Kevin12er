@@ -2,15 +2,17 @@
 import Link from "next/link";
 
 export default function TabelHasilSiswa({ dataHasil = [] }) {
+  // Hitung jumlah unik siswa
+  const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
+
   return (
     <div className="bg-surface border border-line rounded-2xl overflow-hidden font-jakarta">
-
-        <Link
-          href="/dashboard/guru/hasil"
-          className="text-xs  mt-4 ml-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"
-        >
-          Lihat Semua siswa &rarr;
-        </Link>
+      <Link
+        href="/dashboard/guru/hasil"
+        className="text-xs mt-4 ml-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"
+      >
+        Lihat Semua siswa &rarr;
+      </Link>
 
       <div className="p-5 border-b border-line flex items-center justify-between">
         <div>
@@ -20,17 +22,18 @@ export default function TabelHasilSiswa({ dataHasil = [] }) {
           </p>
         </div>
         <span className="text-xs font-semibold bg-brand-soft text-brand border border-brand-ring px-3 py-1 rounded-full">
-          Total: {dataHasil.length} Siswa
+          Total: {jumlahSiswaUnik} Siswa
         </span>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-87.5 overflow-y-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-base border-b border-line text-xs font-semibold text-secondary uppercase tracking-wider">
+          <thead className="bg-base border-b border-line text-xs font-semibold text-secondary uppercase tracking-wider sticky top-0 z-10">
             <tr>
               <th className="p-4">Nama Siswa</th>
-              <th className="p-4">Kelas</th>
+              {/* Diubah sesuai masukan kamu */}
               <th className="p-4">Mata Pelajaran</th>
+              <th className="p-4">Nama Kuis</th>
               <th className="p-4">Nilai</th>
               <th className="p-4">Status</th>
             </tr>
@@ -39,18 +42,22 @@ export default function TabelHasilSiswa({ dataHasil = [] }) {
             {dataHasil.map((item) => (
               <tr key={item.id} className="hover:bg-base/50 transition-colors">
                 <td className="p-4 font-semibold text-primary">{item.nama}</td>
-                <td className="p-4 text-secondary">{item.kelas}</td>
+                {/* Kolom 1: Mata Pelajaran / Topik */}
                 <td className="p-4 text-secondary">{item.mapel}</td>
-                <td className="p-4 font-bold text-brand">{item.nilai}</td>
+                {/* Kolom 2: Nama Kuis / Evaluasi */}
+                <td className="p-4 text-secondary">{item.judulKuis}</td>
+                <td className="p-4 font-bold text-brand">
+                  {typeof item.nilai === "number" ? Math.round(item.nilai) : item.nilai}
+                </td>
                 <td className="p-4">
                   <span
                     className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${
-                      item.nilai >= 75
+                      Number(item.nilai) >= 75
                         ? "bg-brand-soft text-brand border-brand-ring"
                         : "bg-red-950/40 text-av-red border-red-900"
                     }`}
                   >
-                    {item.nilai >= 75 ? "LULUS" : "REMEDIAL"}
+                    {Number(item.nilai) >= 75 ? "LULUS" : "REMEDIAL"}
                   </span>
                 </td>
               </tr>
