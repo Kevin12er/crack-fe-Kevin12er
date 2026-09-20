@@ -7,6 +7,7 @@ import ProgressCard from "@/app/dashboard/siswa/components/progresscard";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
+import { fetchApi } from "@/lib/api";
 
 export default function SiswaDashboard() {
   const router = useRouter();
@@ -24,7 +25,37 @@ export default function SiswaDashboard() {
 
     if (!isSiswa) {
       router.replace("/dashboard/guru");
+      return;
     }
+
+    // Auto-Enrollment otomatis saat siswa masuk ke Dashboard
+    const ensureAutoEnrollment = async () => {
+      try {
+        // 1. Ambil daftar course yang sudah di-enroll oleh siswa
+        const myCourses = await fetchApi("/enrollments/my-courses").catch(() => []);
+        const myCourseList = Array.isArray(myCourses) ? myCourses : [];
+
+        // 2. Ambil seluruh course yang tersedia di backend NestJS
+        const allCourses = await fetchApi("/courses").catch(() => []);
+        const allCourseList = Array.isArray(allCourses) ? allCourses : [];
+
+        // 3. Jika ada course yang belum di-enroll, daftarkan otomatis secara aman
+        if (allCourseList.length > 0 && myCourseList.length < allCourseList.length) {
+          await Promise.all(
+            allCourseList.map((course) =>
+              fetchApi("/enrollments", {
+                method: "POST",
+                body: JSON.stringify({ courseId: course.id }),
+              }).catch(() => null) // Mengabaikan jika sudah terdaftar
+            )
+          );
+        }
+      } catch (err) {
+        console.warn("Auto-enrollment background process failed:", err);
+      }
+    };
+
+    ensureAutoEnrollment();
   }, [isAuthenticated, isSiswa, router]);
 
   if (!isAuthenticated || !isSiswa) {

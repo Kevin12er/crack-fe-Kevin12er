@@ -46,7 +46,7 @@ export default function RegisterPage() {
     try {
       const backendRole = role === "guru" ? "INSTRUCTOR" : "STUDENT";
 
-      // A. Register Akun Baru ke NestJS Backend
+      // 1. Register Akun
       await fetchApi("/auth/register", {
         method: "POST",
         body: JSON.stringify({
@@ -57,7 +57,7 @@ export default function RegisterPage() {
         }),
       });
 
-      // B. Auto-Login Langsung untuk Mendapatkan Access Token JWT
+      // 2. Auto-Login
       const loginRes = await fetchApi("/auth/login", {
         method: "POST",
         body: JSON.stringify({
@@ -72,15 +72,32 @@ export default function RegisterPage() {
         localStorage.setItem("token", jwtToken);
       }
 
+      // 3. Auto-Enrollment ke Semua Kelas Jika Siswa
+      if (jwtToken && backendRole === "STUDENT") {
+        try {
+          const courses = await fetchApi("/courses").catch(() => []);
+          const courseList = Array.isArray(courses) ? courses : courses?.data || [];
+
+          await Promise.all(
+            courseList.map((c) =>
+              fetchApi("/enrollments", {
+                method: "POST",
+                body: JSON.stringify({ courseId: c.id }),
+              }).catch(() => null)
+            )
+          );
+        } catch (enrollErr) {
+          console.warn("Auto-enroll error:", enrollErr);
+        }
+      }
+
       const userData = loginRes?.user || {
         name: data.nama,
         email: data.email,
         role: backendRole,
       };
 
-      // C. Simpan ke Auth Context
       loginUser(userData);
-
     } catch (err) {
       setErrorMessage(
         err.message || "Gagal mendaftar. Email mungkin sudah digunakan."
