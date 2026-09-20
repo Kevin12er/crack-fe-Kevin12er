@@ -5,22 +5,25 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
-import { fetchApi } from "@/lib/api"; // 1. Import fetchApi
+import { fetchApi } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { user, register: registerUser, isAuthenticated } = useAuth();
+  const { user, login: loginUser, isAuthenticated, isLoading } = useAuth();
   const [role, setRole] = useState("siswa");
-  const [errorMessage, setErrorMessage] = useState(""); // State untuk error API
+  const [errorMessage, setErrorMessage] = useState("");
 
+  // 1. Proteksi dan Redirect Otomatis jika sudah terautentikasi
   useEffect(() => {
+    if (isLoading) return;
+
     if (isAuthenticated && user) {
-      const userRole = String(user.role).toUpperCase();
+      const userRole = String(user.role || "").toUpperCase();
       const isGuru = userRole === "INSTRUCTOR" || userRole === "GURU";
 
       router.replace(isGuru ? "/dashboard/guru" : "/dashboard/siswa");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, isLoading, router]);
 
   const {
     register,
@@ -38,15 +41,13 @@ export default function RegisterPage() {
 
   const password = watch("password");
 
-  // 2. Ubah onSubmit menjadi async untuk integrasi API
   const onSubmit = async (data) => {
     setErrorMessage("");
     try {
-      // Tentukan role kapital sesuai DTO NestJS/Prisma
       const backendRole = role === "guru" ? "INSTRUCTOR" : "STUDENT";
 
-      // Kirim request ke endpoint backend Railway
-      const response = await fetchApi("/auth/register", {
+      // A. Register Akun Baru ke NestJS Backend
+      await fetchApi("/auth/register", {
         method: "POST",
         body: JSON.stringify({
           name: data.nama,
@@ -56,27 +57,30 @@ export default function RegisterPage() {
         }),
       });
 
-      // Simpan token JWT jika backend mengembalikannya saat register
-      if (response?.access_token) {
-        localStorage.setItem("token", response.access_token);
+      // B. Auto-Login Langsung untuk Mendapatkan Access Token JWT
+      const loginRes = await fetchApi("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
+
+      const jwtToken = loginRes?.access_token || loginRes?.token;
+
+      if (jwtToken) {
+        localStorage.setItem("token", jwtToken);
       }
 
-      // Siapkan objek user untuk AuthContext
-      const userData = response?.user || {
+      const userData = loginRes?.user || {
         name: data.nama,
         email: data.email,
         role: backendRole,
       };
 
-      // Simpan ke Auth Context
-      registerUser(userData);
+      // C. Simpan ke Auth Context
+      loginUser(userData);
 
-      // Redirect ke dashboard yang sesuai
-      if (backendRole === "INSTRUCTOR") {
-        router.push("/dashboard/guru");
-      } else {
-        router.push("/dashboard/siswa");
-      }
     } catch (err) {
       setErrorMessage(
         err.message || "Gagal mendaftar. Email mungkin sudah digunakan."
@@ -98,7 +102,6 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Pesan Error dari Backend */}
             {errorMessage && (
               <div className="p-3.5 rounded-xl bg-av-red/10 border border-av-red/30 text-av-red text-xs font-semibold text-center">
                 {errorMessage}

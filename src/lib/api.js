@@ -1,7 +1,6 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://crack-be-kevin12er-production.up.railway.app';
 
 export async function fetchApi(endpoint, options = {}) {
-  // 1. Ambil token dari localStorage
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   const headers = {
@@ -18,16 +17,18 @@ export async function fetchApi(endpoint, options = {}) {
     headers,
   });
 
-  // 2. Handle HTTP 401 (Unauthorized)
-  if (response.status === 401 && typeof window !== 'undefined') {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-    throw new Error('Sesi telah berakhir, silakan login kembali.');
-  }
-
   const data = await response.json().catch(() => null);
 
-  // 3. Handle error response dari NestJS (termasuk array message)
+  // Jika 401 Unauthorized, hapus token tanpa me-reload halaman secara paksa
+  if (response.status === 401 && typeof window !== 'undefined') {
+    localStorage.removeItem('token');
+    const errorMessage = Array.isArray(data?.message)
+      ? data.message.join(', ')
+      : data?.message || 'Sesi telah berakhir, silakan login kembali.';
+    throw new Error(errorMessage);
+  }
+
+  // Handle error HTTP lainnya dari NestJS
   if (!response.ok) {
     const errorMessage = Array.isArray(data?.message)
       ? data.message.join(', ')
