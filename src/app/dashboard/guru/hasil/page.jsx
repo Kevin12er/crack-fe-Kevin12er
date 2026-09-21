@@ -10,6 +10,11 @@ export default function HasilUjianGuruPage() {
   const [dataHasil, setDataHasil] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // State untuk Modal Detail Jawaban Essay / Pilihan Ganda
+  const [selectedAttemptId, setSelectedAttemptId] = useState(null);
+  const [detailAnswers, setDetailAnswers] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
   const loadDataHasil = useCallback(async () => {
     try {
       setLoading(true);
@@ -39,19 +44,25 @@ export default function HasilUjianGuruPage() {
           res.title ||
           "Bank Soal Evaluasi";
 
-        const rawScore = res.score ?? res.nilai ?? res.scoreObtained ?? 0;
+        const rawScore = res.score ?? res.nilai ?? res.scoreObtained;
         const rawDate = res.createdAt || res.updatedAt;
         const tanggal = rawDate
           ? new Date(rawDate).toISOString().split("T")[0]
           : "2026-09-19";
 
+        const validAttemptId = res.quizAttemptId || res.attemptId || res.id;
+        const numericScore = typeof rawScore === "number" ? Math.round(rawScore) : 0;
+
         return {
           id: res.id || idx + 1,
+          attemptId: validAttemptId,
           nama: namaSiswa,
           mapel: namaMapel,
           judulKuis: judulKuis,
           tanggal: tanggal,
-          nilai: typeof rawScore === "number" ? Math.round(rawScore) : 0,
+          nilai: numericScore,
+          // Logika: Skor 0 mengindikasikan butuh evaluasi (Essay / Remedial Total)
+          needsEvaluation: numericScore === 0,
         };
       });
 
@@ -68,6 +79,27 @@ export default function HasilUjianGuruPage() {
     loadDataHasil();
   }, [loadDataHasil]);
 
+  const handleOpenDetail = async (attemptId) => {
+    if (!attemptId) {
+      alert("ID Attempt tidak ditemukan pada baris data ini.");
+      return;
+    }
+
+    setSelectedAttemptId(attemptId);
+    setLoadingDetail(true);
+    setDetailAnswers(null);
+
+    try {
+      const res = await fetchApi(`/quiz-answers/attempt/${attemptId}`);
+      setDetailAnswers(res);
+    } catch (err) {
+      console.error("[ERROR DETAIL JAWABAN]:", err);
+      alert(`Gagal memuat detail jawaban: ${err.message || "Endpoint tidak merespon"}`);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
   const hasilFiltered = dataHasil.filter((item) => {
     const matchNama = item.nama
       .toLowerCase()
@@ -79,7 +111,7 @@ export default function HasilUjianGuruPage() {
 
   const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
   const lulus = dataHasil.filter((s) => s.nilai >= 75).length;
-  const remedial = dataHasil.filter((s) => s.nilai < 75).length;
+  const perluEvaluasi = dataHasil.filter((s) => s.needsEvaluation).length;
 
   const daftarOptionMapel = [
     "Semua",
@@ -139,10 +171,10 @@ export default function HasilUjianGuruPage() {
           </div>
           <div className="bg-surface border border-line p-4 rounded-2xl">
             <span className="text-xs font-semibold text-secondary uppercase tracking-wider">
-              Perlu Remedial
+              Perlu Evaluasi Guru
             </span>
-            <h3 className="text-2xl font-bold text-av-red mt-1">
-              {loading ? "..." : `${remedial} Evaluasi`}
+            <h3 className="text-2xl font-bold text-amber-500 mt-1">
+              {loading ? "..." : `${perluEvaluasi} Evaluasi`}
             </h3>
           </div>
         </div>
@@ -184,12 +216,13 @@ export default function HasilUjianGuruPage() {
                   <th className="p-4">Tanggal Ujian</th>
                   <th className="p-4">Nilai</th>
                   <th className="p-4">Status</th>
+                  <th className="p-4 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center p-8 text-xs text-secondary">
+                    <td colSpan={7} className="text-center p-8 text-xs text-secondary">
                       Memuat data rekap hasil...
                     </td>
                   </tr>
@@ -205,24 +238,49 @@ export default function HasilUjianGuruPage() {
                       <td className="p-4 text-secondary">{item.mapel}</td>
                       <td className="p-4 text-secondary">{item.judulKuis}</td>
                       <td className="p-4 text-xs text-muted">{item.tanggal}</td>
-                      <td className="p-4 font-bold text-brand">{item.nilai}</td>
+                      
+                      {/* Kolom Nilai */}
+                      <td className="p-4 font-bold text-brand">
+                        {item.needsEvaluation ? (
+                          <span className="text-xs text-amber-500 font-semibold">
+                            Pending
+                          </span>
+                        ) : (
+                          item.nilai
+                        )}
+                      </td>
+
+                      {/* Kolom Status */}
                       <td className="p-4">
-                        <span
-                          className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${
-                            item.nilai >= 75
-                              ? "bg-brand-soft text-brand border-brand-ring"
-                              : "bg-red-950/40 text-av-red border-red-900"
-                          }`}
+                        {item.needsEvaluation ? (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-md border bg-amber-500/10 text-amber-500 border-amber-500/30">
+                            PERLU EVALUASI
+                          </span>
+                        ) : item.nilai >= 75 ? (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-md border bg-brand-soft text-brand border-brand-ring">
+                            LULUS
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-md border bg-red-950/40 text-av-red border-red-900">
+                            REMEDIAL
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => handleOpenDetail(item.attemptId)}
+                          className="rounded-lg bg-base border border-line px-3 py-1.5 text-xs font-semibold text-brand hover:border-brand transition-all cursor-pointer"
                         >
-                          {item.nilai >= 75 ? "LULUS" : "REMEDIAL"}
-                        </span>
+                          👁️ Periksa Jawaban
+                        </button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center p-8 text-xs text-muted"
                     >
                       Tidak ada data hasil siswa yang cocok.
@@ -234,6 +292,75 @@ export default function HasilUjianGuruPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal Popup Detail Jawaban Essay / Pilihan Ganda */}
+      {selectedAttemptId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-3xl border border-line bg-surface p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h2 className="font-bold text-primary">
+                Evaluasi Jawaban Siswa
+              </h2>
+              <button
+                onClick={() => setSelectedAttemptId(null)}
+                className="rounded-lg bg-base px-2.5 py-1 text-xs font-bold text-secondary hover:text-primary cursor-pointer"
+              >
+                ✕ Tutup
+              </button>
+            </div>
+
+            {loadingDetail ? (
+              <div className="py-12 text-center text-xs text-secondary">
+                Memuat jawaban dari database NestJS...
+              </div>
+            ) : detailAnswers && detailAnswers.answers ? (
+              <div className="space-y-4">
+                <div className="text-xs text-secondary">
+                  Kuis: <strong className="text-primary">{detailAnswers.quiz?.title}</strong>
+                </div>
+
+                {detailAnswers.answers.map((ans, idx) => (
+                  <div
+                    key={ans.id || idx}
+                    className="rounded-2xl border border-line bg-base p-4 space-y-2"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="text-xs font-bold text-primary">
+                        Soal {idx + 1}: {ans.question?.question}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface text-brand border border-line uppercase">
+                        {ans.question?.type}
+                      </span>
+                    </div>
+
+                    {ans.question?.type === "ESSAY" ? (
+                      <div className="rounded-xl bg-surface p-3 border border-line space-y-1">
+                        <p className="text-[10px] font-bold text-secondary uppercase">
+                          Jawaban Essay Teks Siswa:
+                        </p>
+                        <p className="text-xs font-medium text-primary whitespace-pre-wrap">
+                          {ans.answerText || "(Siswa tidak menginputkan jawaban teks)"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-primary">
+                        Pilihan Jawaban:{" "}
+                        <span className="font-bold text-brand">
+                          {ans.selectedOption?.optionText || "Tidak dijawab"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-secondary">
+                Data jawaban tidak ditemukan untuk attempt ini.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

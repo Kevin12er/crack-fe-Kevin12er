@@ -11,6 +11,7 @@ export default function KerjakanKuisPage({ params }) {
 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
+  const [currentIndex, setCurrentIndex] = useState(0); // Index soal yang sedang aktif
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -55,6 +56,20 @@ export default function KerjakanKuisPage({ params }) {
     setAnswers((prev) => ({ ...prev, [questionId]: textValue }));
   };
 
+  // Navigasi Pindah Soal
+  const handleNext = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
+  // Kirim Semua Jawaban ke NestJS
   const handleSubmitQuiz = async () => {
     try {
       setIsSubmitting(true);
@@ -91,7 +106,6 @@ export default function KerjakanKuisPage({ params }) {
 
       console.log("[SUBMIT] Response dari NestJS:", res);
 
-      // Pembulatan angka agar nilai desimal seperti 33.33333333 menjadi 33
       const rawScore = res?.score ?? 0;
       const finalScore = Math.round(Number(rawScore));
 
@@ -104,6 +118,11 @@ export default function KerjakanKuisPage({ params }) {
       setIsSubmitting(false);
     }
   };
+
+  const currentQuestion = questions[currentIndex];
+  const hasEssay = questions.some(
+    (q) => q.type === "ESSAY" || !q.options || q.options.length === 0
+  );
 
   return (
     <>
@@ -123,26 +142,39 @@ export default function KerjakanKuisPage({ params }) {
             </div>
           )}
 
+          {/* TAMPILAN SETELAH KUIS DI-SUBMIT */}
           {!loading && submitted && (
             <div className="rounded-3xl border border-line bg-surface p-8 text-center space-y-4 shadow-sm">
-              <h2 className="text-2xl font-extrabold text-primary">Kuis Selesai!</h2>
-              <p className="text-xs text-secondary">Nilai Pengerjaan Kamu:</p>
-              <div className="text-5xl font-black text-brand">
-                {score !== null ? Math.round(Number(score)) : 0}
-              </div>
-              <p className="text-xs text-secondary">
-                Jawaban dan nilai kamu telah resmi tersimpan ke sistem database.
-              </p>
+              <h2 className="text-2xl font-extrabold text-primary">
+                Kuis Selesai Dikirim!
+              </h2>
+
+              {/* Pengecekan: Jika ada soal essay, jangan tampilkan skor 0 */}
+              {hasEssay ? (
+                <div className="space-y-3 py-4">
+                  <div className="inline-block rounded-full bg-amber-500/10 border border-amber-500/30 px-4 py-1.5 text-xs font-bold text-amber-500">
+                    ⏳ Jawaban Essay Berhasil Disimpan
+                  </div>
+                  <p className="text-xs text-secondary max-w-md mx-auto leading-relaxed">
+                    Jawaban essay kamu telah tersimpan ke database PostgreSQL dan sedang menunggu proses evaluasi & penilaian dari Guru.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 py-2">
+                  <p className="text-xs text-secondary">Nilai Pengerjaan Kamu:</p>
+                  <div className="text-5xl font-black text-brand">
+                    {score !== null ? Math.round(Number(score)) : 0}
+                  </div>
+                  <p className="text-xs text-secondary">
+                    Jawaban dan nilai kamu telah resmi tersimpan ke sistem database.
+                  </p>
+                </div>
+              )}
+
               <div className="pt-4 flex justify-center gap-3">
                 <Link
-                  href="/dashboard/siswa/nilai"
-                  className="rounded-xl bg-brand px-6 py-2.5 text-xs font-bold text-primary hover:bg-brand-hover transition-all"
-                >
-                  Lihat Halaman Nilai Saya
-                </Link>
-                <Link
                   href="/dashboard/siswa/latihan-soal"
-                  className="rounded-xl border border-line bg-base px-6 py-2.5 text-xs font-bold text-secondary hover:text-primary transition-all"
+                  className="rounded-xl bg-brand px-6 py-2.5 text-xs font-bold text-primary hover:bg-brand-hover transition-all"
                 >
                   Kembali ke Daftar Soal
                 </Link>
@@ -150,66 +182,94 @@ export default function KerjakanKuisPage({ params }) {
             </div>
           )}
 
+          {/* TAMPILAN SOAL AKTIF (PINDAH SATU PER SATU) */}
           {!loading && !submitted && (
             <div className="space-y-6">
-              {questions.length > 0 ? (
-                questions.map((q, qIndex) => (
-                  <div
-                    key={q.id || qIndex}
-                    className="rounded-2xl border border-line bg-surface p-5 space-y-4"
-                  >
-                    <h3 className="text-sm font-bold text-primary">
-                      {qIndex + 1}. {q.question}
-                    </h3>
-
-                    <div className="space-y-2">
-                      {q.options && q.options.length > 0 ? (
-                        q.options.map((opt) => (
-                          <label
-                            key={opt.id}
-                            onClick={() => handleSelectOption(q.id, opt.id)}
-                            className={`flex items-center gap-3 rounded-xl border p-3 text-xs cursor-pointer transition-all ${
-                              answers[q.id] === opt.id
-                                ? "border-brand bg-brand/10 font-bold text-brand"
-                                : "border-line bg-base text-primary hover:border-brand/50"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name={`question-${q.id}`}
-                              checked={answers[q.id] === opt.id}
-                              onChange={() => {}}
-                              className="accent-brand"
-                            />
-                            <span>{opt.optionText}</span>
-                          </label>
-                        ))
-                      ) : (
-                        <textarea
-                          rows={3}
-                          value={answers[q.id] || ""}
-                          placeholder="Tuliskan jawaban essay kamu..."
-                          onChange={(e) => handleEssayChange(q.id, e.target.value)}
-                          className="w-full rounded-xl border border-line bg-base p-3 text-xs text-primary focus:outline-none focus:border-brand"
-                        />
-                      )}
-                    </div>
+              {questions.length > 0 && currentQuestion ? (
+                <div className="rounded-3xl border border-line bg-surface p-6 md:p-8 space-y-6 shadow-sm">
+                  {/* Indicator Soal (Contoh: Soal 1 dari 5) */}
+                  <div className="flex justify-between items-center border-b border-line pb-4">
+                    <span className="text-xs font-bold text-brand uppercase tracking-wider">
+                      Soal {currentIndex + 1} dari {questions.length}
+                    </span>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-base border border-line text-secondary uppercase">
+                      Tipe: {currentQuestion.type || "Pilihan Ganda"}
+                    </span>
                   </div>
-                ))
+
+                  {/* Pertanyaan */}
+                  <h3 className="font-bold text-primary leading-relaxed">
+                    {currentQuestion.question}
+                  </h3>
+
+                  {/* Opsi / Form Essay */}
+                  <div className="space-y-3 pt-2">
+                    {currentQuestion.options && currentQuestion.options.length > 0 ? (
+                      currentQuestion.options.map((opt) => (
+                        <label
+                          key={opt.id}
+                          onClick={() => handleSelectOption(currentQuestion.id, opt.id)}
+                          className={`flex items-center gap-3 rounded-2xl border p-4 text-xs cursor-pointer transition-all ${
+                            answers[currentQuestion.id] === opt.id
+                              ? "border-brand bg-brand/10 font-bold text-brand shadow-sm"
+                              : "border-line bg-base text-primary hover:border-brand/50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`question-${currentQuestion.id}`}
+                            checked={answers[currentQuestion.id] === opt.id}
+                            onChange={() => {}}
+                            className="accent-brand"
+                          />
+                          <span>{opt.optionText}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <textarea
+                        rows={5}
+                        value={answers[currentQuestion.id] || ""}
+                        placeholder="Tuliskan jawaban essay kamu secara lengkap di sini..."
+                        onChange={(e) =>
+                          handleEssayChange(currentQuestion.id, e.target.value)
+                        }
+                        className="w-full rounded-2xl border border-line bg-base p-4 text-xs text-primary focus:outline-none focus:border-brand transition-all"
+                      />
+                    )}
+                  </div>
+
+                  {/* Tombol Navigasi Pindah Soal */}
+                  <div className="flex justify-between items-center pt-4 border-t border-line">
+                    <button
+                      onClick={handlePrev}
+                      disabled={currentIndex === 0}
+                      className="rounded-xl border border-line bg-base px-4 py-2 text-xs font-bold text-secondary hover:text-primary disabled:opacity-30 cursor-pointer"
+                    >
+                      ← Sebelumnya
+                    </button>
+
+                    {currentIndex < questions.length - 1 ? (
+                      <button
+                        onClick={handleNext}
+                        className="rounded-xl bg-brand px-6 py-2.5 text-xs font-bold text-primary hover:bg-brand-hover shadow-md cursor-pointer transition-all"
+                      >
+                        Soal Selanjutnya →
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSubmitQuiz}
+                        disabled={isSubmitting}
+                        className="rounded-xl bg-brand px-6 py-2.5 text-xs font-bold text-primary hover:bg-brand-hover shadow-md disabled:opacity-50 cursor-pointer transition-all"
+                      >
+                        {isSubmitting ? "Mengirim Hasil..." : "✓ Kirim Jawaban Kuis"}
+                      </button>
+                    )}
+                  </div>
+                </div>
               ) : (
                 <div className="py-12 text-center text-xs text-secondary rounded-2xl border border-dashed border-line">
                   Belum ada soal pada kuis ini.
                 </div>
-              )}
-
-              {questions.length > 0 && (
-                <button
-                  onClick={handleSubmitQuiz}
-                  disabled={isSubmitting}
-                  className="w-full rounded-xl bg-brand py-3.5 text-xs font-bold text-primary shadow-lg hover:bg-brand-hover disabled:opacity-50 transition-all cursor-pointer"
-                >
-                  {isSubmitting ? "Mengirim Hasil..." : "Kirim Jawaban Kuis"}
-                </button>
               )}
             </div>
           )}
