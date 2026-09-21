@@ -51,17 +51,31 @@ export default function KerjakanKuisPage({ params }) {
     setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
   };
 
+  const handleEssayChange = (questionId, textValue) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: textValue }));
+  };
+
   const handleSubmitQuiz = async () => {
     try {
       setIsSubmitting(true);
 
-      // Susun format answers sesuai DTO NestJS
-      const formattedAnswers = Object.entries(answers).map(
-        ([questionId, selectedOptionId]) => ({
-          questionId,
-          selectedOptionId,
-        })
-      );
+      // Susun format answers DENGAN MEMBEDAKAN MULTIPLE_CHOICE DAN ESSAY
+      const formattedAnswers = questions.map((q) => {
+        const isEssay = q.type === "ESSAY" || !q.options || q.options.length === 0;
+        const userAnswer = answers[q.id] || "";
+
+        if (isEssay) {
+          return {
+            questionId: q.id,
+            answerText: userAnswer, // Kirim teks ke field answerText untuk Essay
+          };
+        } else {
+          return {
+            questionId: q.id,
+            selectedOptionId: userAnswer, // Kirim ID Opsi ke selectedOptionId
+          };
+        }
+      });
 
       const payload = {
         quizId: quizId,
@@ -172,14 +186,10 @@ export default function KerjakanKuisPage({ params }) {
                         ))
                       ) : (
                         <textarea
-                          rows={2}
+                          rows={3}
+                          value={answers[q.id] || ""}
                           placeholder="Tuliskan jawaban essay kamu..."
-                          onChange={(e) =>
-                            setAnswers((prev) => ({
-                              ...prev,
-                              [q.id]: e.target.value,
-                            }))
-                          }
+                          onChange={(e) => handleEssayChange(q.id, e.target.value)}
                           className="w-full rounded-xl border border-line bg-base p-3 text-xs text-primary focus:outline-none focus:border-brand"
                         />
                       )}
