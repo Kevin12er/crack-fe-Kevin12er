@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Failed to read auth session:", error);
     } finally {
-      setIsHydrated(true); 
+      setIsHydrated(true);
     }
   }, []);
 
@@ -29,15 +29,14 @@ export function AuthProvider({ children }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
     } else {
       localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem("token"); 
+      localStorage.removeItem("token");
     }
   }, [user, isHydrated]);
 
-  // Fungsi login menerima object user asli dari backend
   const login = (userData) => {
-    // Normalisasi role agar konsisten di seluruh aplikasi
-    const rawRole = userData?.role || "";
-    const isGuru = rawRole === "INSTRUCTOR" || rawRole === "guru";
+    // Ambil role murni dari backend database (INSTRUCTOR / STUDENT)
+    const backendRole = String(userData?.role || "").toUpperCase();
+    const isGuru = backendRole === "INSTRUCTOR";
 
     const nextUser = {
       ...userData,
@@ -74,8 +73,8 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       isAuthenticated: Boolean(user?.isAuthenticated),
-      isHydrated, // <--- komponen penjelajah bisa tahu status pembacaan storage
-      loading: !isHydrated, // <--- flag loading
+      isHydrated,
+      loading: !isHydrated,
       login,
       register,
       logout,

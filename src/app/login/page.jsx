@@ -5,23 +5,22 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
-import { fetchApi } from "@/lib/api"; // 1. Tambahkan import ini
+import { fetchApi } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, login, isAuthenticated } = useAuth();
-  const [role, setRole] = useState("siswa");
-  const [errorMessage, setErrorMessage] = useState(""); // 2. State untuk handle error login
+  const { user, login, isAuthenticated, isHydrated } = useAuth();
+  const [tabRole, setTabRole] = useState("siswa");
+  const [errorMessage, setErrorMessage] = useState("");
 
+  // Redirect jika user sudah terautentikasi di session
   useEffect(() => {
-  if (isAuthenticated && user) {
-    // Normalisasi role agar bisa membaca "guru" maupun "INSTRUCTOR"
-    const userRole = String(user.role).toLowerCase();
-    const isGuru = userRole === "guru" || userRole === "instructor";
-
-    router.replace(isGuru ? "/dashboard/guru" : "/dashboard/siswa");
-  }
-}, [isAuthenticated, user, router]);
+    if (isHydrated && isAuthenticated && user) {
+      const userRole = String(user.role || "").toUpperCase();
+      const isGuru = userRole === "INSTRUCTOR";
+      router.replace(isGuru ? "/dashboard/guru" : "/dashboard/siswa");
+    }
+  }, [isAuthenticated, isHydrated, user, router]);
 
   const {
     register,
@@ -34,11 +33,9 @@ export default function LoginPage() {
     },
   });
 
-  // 3. Ubah fungsi onSubmit menjadi async untuk integrasi API
   const onSubmit = async (data) => {
     setErrorMessage("");
     try {
-      // Kirim request login ke backend Railway
       const response = await fetchApi("/auth/login", {
         method: "POST",
         body: JSON.stringify({
@@ -47,33 +44,48 @@ export default function LoginPage() {
         }),
       });
 
-      // Simpan JWT Token ke localStorage
-      if (response?.access_token) {
-        localStorage.setItem("token", response.access_token);
+      const token = response?.access_token || response?.token;
+      if (token) {
+        localStorage.setItem("token", token);
       }
 
-      // Ambil data user dari respon (jika ada) atau gunakan fallback
-      const userData = response?.user || {
-        email: data.email,
-        role: role === "guru" ? "INSTRUCTOR" : "STUDENT",
-        name: data.email.split("@")[0],
-      };
+      // Ambil objek user dari respon backend
+      let userData = response?.user;
 
-      // Simpan ke Auth Context lokal
-      login(userData);
+      // Jika backend tidak mengembalikan objek user lengkap saat login,
+      // panggil GET /auth/profile untuk mengambil profil asli dari DB
+      if (!userData || !userData.role) {
+        userData = await fetchApi("/auth/profile");
+      }
 
-      // Redirect berdasarkan role dari backend/pilihan
-      const isInstructor =
-        userData.role === "INSTRUCTOR" || userData.role === "guru" || role === "guru";
+      // Simpan user ke AuthContext
+      const loggedInUser = login(userData);
 
+      // Ambil role murni dari database
+      const dbRole = String(loggedInUser?.role || "").toUpperCase();
+      const isInstructor = dbRole === "INSTRUCTOR";
+
+      // Validasi Kesesuaian Tab Pilihan UI dengan Role Asli Database
+      if (tabRole === "guru" && !isInstructor) {
+        throw new Error("Akun Anda terdaftar sebagai Siswa. Silakan pilih tab Siswa.");
+      }
+
+      if (tabRole === "siswa" && isInstructor) {
+        // Jika instructor login di tab siswa, tetap arahkan ke dashboard guru
+        router.push("/dashboard/guru");
+        return;
+      }
+
+      // Redirect Sesuai Role
       if (isInstructor) {
         router.push("/dashboard/guru");
       } else {
         router.push("/dashboard/siswa");
       }
     } catch (err) {
-      // Tampilkan error dari backend (misal: "Unauthorized" / "Email atau password salah")
-      setErrorMessage(err.message || "Gagal masuk. Periksa kembali email dan password Anda.");
+      setErrorMessage(
+        err.message || "Gagal masuk. Periksa kembali email dan password Anda."
+      );
     }
   };
 
@@ -93,14 +105,12 @@ export default function LoginPage() {
           </div>
 
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-            {/* Pesan Error Login dari Backend */}
             {errorMessage && (
               <div className="p-3.5 rounded-xl bg-av-red/10 border border-av-red/30 text-av-red text-xs font-semibold text-center">
                 {errorMessage}
               </div>
             )}
 
-            {/* Role Switcher */}
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
                 Masuk Sebagai
@@ -108,9 +118,9 @@ export default function LoginPage() {
               <div className="grid grid-cols-2 gap-2 p-1 bg-base border border-line rounded-xl">
                 <button
                   type="button"
-                  onClick={() => setRole("siswa")}
+                  onClick={() => setTabRole("siswa")}
                   className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    role === "siswa"
+                    tabRole === "siswa"
                       ? "bg-brand text-primary font-bold shadow-md"
                       : "text-secondary hover:text-primary"
                   }`}
@@ -119,9 +129,9 @@ export default function LoginPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRole("guru")}
+                  onClick={() => setTabRole("guru")}
                   className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    role === "guru"
+                    tabRole === "guru"
                       ? "bg-brand text-primary font-bold shadow-md"
                       : "text-secondary hover:text-primary"
                   }`}
@@ -131,7 +141,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Email Field */}
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
                 Email
@@ -159,7 +168,6 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Password Field */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-xs font-semibold text-secondary uppercase tracking-wider">
@@ -193,7 +201,9 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="w-full cursor-pointer rounded-xl bg-brand py-3.5 font-semibold text-sm text-primary hover:bg-brand-hover active:scale-[0.98] transition-all shadow-lg mt-2 disabled:opacity-50"
             >
-              {isSubmitting ? "Memproses..." : `Masuk ke Kelas (${role === "guru" ? "Guru" : "Siswa"})`}
+              {isSubmitting
+                ? "Memproses..."
+                : `Masuk ke Kelas (${tabRole === "guru" ? "Guru" : "Siswa"})`}
             </button>
 
             <p className="text-xs font-bold text-secondary text-center mt-4">

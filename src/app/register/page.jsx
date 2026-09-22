@@ -9,13 +9,13 @@ import { fetchApi } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { user, login: loginUser, isAuthenticated, isLoading } = useAuth();
-  const [role, setRole] = useState("siswa");
+  // Menggunakan 'loading' (sesuai penamaan di AuthContext)
+  const { user, login: loginUser, isAuthenticated, loading } = useAuth();
   const [errorMessage, setErrorMessage] = useState("");
 
-  // 1. Proteksi dan Redirect Otomatis jika sudah terautentikasi
+  // 1. Redirect Otomatis jika user sudah terautentikasi
   useEffect(() => {
-    if (isLoading) return;
+    if (loading) return;
 
     if (isAuthenticated && user) {
       const userRole = String(user.role || "").toUpperCase();
@@ -23,7 +23,7 @@ export default function RegisterPage() {
 
       router.replace(isGuru ? "/dashboard/guru" : "/dashboard/siswa");
     }
-  }, [isAuthenticated, user, isLoading, router]);
+  }, [isAuthenticated, user, loading, router]);
 
   const {
     register,
@@ -44,20 +44,17 @@ export default function RegisterPage() {
   const onSubmit = async (data) => {
     setErrorMessage("");
     try {
-      const backendRole = role === "guru" ? "INSTRUCTOR" : "STUDENT";
-
-      // 1. Register Akun
+      // 1. Register Akun (Backend menetapkan role STUDENT demi keamanan)
       await fetchApi("/auth/register", {
         method: "POST",
         body: JSON.stringify({
           name: data.nama,
           email: data.email,
           password: data.password,
-          role: backendRole,
         }),
       });
 
-      // 2. Auto-Login
+      // 2. Auto-Login setelah pendaftaran sukses
       const loginRes = await fetchApi("/auth/login", {
         method: "POST",
         body: JSON.stringify({
@@ -72,8 +69,8 @@ export default function RegisterPage() {
         localStorage.setItem("token", jwtToken);
       }
 
-      // 3. Auto-Enrollment ke Semua Kelas Jika Siswa
-      if (jwtToken && backendRole === "STUDENT") {
+      // 3. Auto-Enrollment ke Semua Kelas untuk Siswa Baru
+      if (jwtToken) {
         try {
           const courses = await fetchApi("/courses").catch(() => []);
           const courseList = Array.isArray(courses) ? courses : courses?.data || [];
@@ -94,10 +91,11 @@ export default function RegisterPage() {
       const userData = loginRes?.user || {
         name: data.nama,
         email: data.email,
-        role: backendRole,
+        role: "STUDENT",
       };
 
       loginUser(userData);
+      router.push("/dashboard/siswa");
     } catch (err) {
       setErrorMessage(
         err.message || "Gagal mendaftar. Email mungkin sudah digunakan."
@@ -115,7 +113,7 @@ export default function RegisterPage() {
             <h1 className="text-brand text-lg md:text-xl font-bold">
               Learn<span className="font-bold text-primary">Bridge</span>
             </h1>
-            <h2 className="text-sm font-bold text-brand">Daftar Akun</h2>
+            <h2 className="text-sm font-bold text-brand">Daftar Akun Siswa</h2>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -124,36 +122,6 @@ export default function RegisterPage() {
                 {errorMessage}
               </div>
             )}
-
-            <div>
-              <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
-                Daftar Sebagai
-              </label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-base border border-line rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setRole("siswa")}
-                  className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    role === "siswa"
-                      ? "bg-brand text-primary font-bold shadow-md"
-                      : "text-secondary hover:text-primary"
-                  }`}
-                >
-                  Siswa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole("guru")}
-                  className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    role === "guru"
-                      ? "bg-brand text-primary font-bold shadow-md"
-                      : "text-secondary hover:text-primary"
-                  }`}
-                >
-                  Guru
-                </button>
-              </div>
-            </div>
 
             <div>
               <label
@@ -282,7 +250,7 @@ export default function RegisterPage() {
               disabled={isSubmitting}
               className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-50"
             >
-              {isSubmitting ? "Mendaftarkan..." : `Daftar Sebagai ${role === "guru" ? "Guru" : "Siswa"}`}
+              {isSubmitting ? "Mendaftarkan..." : "Daftar Akun Siswa"}
             </button>
           </form>
 

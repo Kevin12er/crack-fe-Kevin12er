@@ -24,7 +24,8 @@ export default function RootLayout({ children }) {
       lang="id"
       className={`${geistSans.variable} ${geistMono.variable} ${jakartaSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      {/* Tambahkan jakartaSans.className di sini */}
+      <body className={`${jakartaSans.className} min-h-full flex flex-col`}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
