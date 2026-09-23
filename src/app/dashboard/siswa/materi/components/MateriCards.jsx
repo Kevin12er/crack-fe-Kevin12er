@@ -1,91 +1,50 @@
+// src/app/dashboard/siswa/materi/components/MateriCards.jsx
 import Link from "next/link";
 
 export default function MateriCard({
   id,
-  icon,
+  icon = "📚",
   nama,
   kelas,
   materi,
-  jam,
-  progress,
-  status,
+  jam = 1,
 }) {
   // Tentukan URL tujuan berdasarkan id materi
   const detailHref = id ? `/dashboard/siswa/materi/${id}` : "#";
 
   return (
-    <div className="flex h-full flex-col gap-4 rounded-2xl border border-line-card bg-surface p-5">
-      {/* Top */}
-      <div className="flex items-start justify-between">
-        <div className="w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center text-2xl">
-          {icon}
-        </div>
-        <span className="text-xs font-bold text-brand bg-brand/10 px-3 py-1 rounded-full">
-          {kelas}
-        </span>
-      </div>
-
-      {/* Info */}
-      <div className="flex flex-col gap-1">
-        <h3 className="text-primary font-jakarta text-[16px] font-bold">
-          {nama}
-        </h3>
-        <p className="text-dim text-sm">
-          {materi} materi · {jam} jam
-        </p>
-      </div>
-
-      {/* Progress */}
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
-          <span className="text-dim text-xs">Progress</span>
-          <span
-            className={`text-xs font-bold ${status === "locked" ? "text-dim" : "text-brand"}`}
-          >
-            {status === "locked" ? "Terkunci" : `${progress}%`}
+    <div className="flex h-full flex-col justify-between gap-4 rounded-2xl border border-line-card bg-surface p-5 transition-all hover:border-brand/40">
+      <div className="flex flex-col gap-4">
+        {/* Top Header Card */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-2xl">
+            {icon}
+          </div>
+          <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-bold text-brand line-clamp-1">
+            {kelas}
           </span>
         </div>
-        <div className="w-full h-1.5 bg-elevated rounded-full overflow-hidden">
-          <div
-            className="h-full bg-brand rounded-full"
-            style={{ width: `${progress}%` }}
-          />
+
+        {/* Info Detail */}
+        <div className="flex flex-col gap-1">
+          <h3 className="font-jakarta text-[16px] font-bold text-primary line-clamp-2">
+            {nama}
+          </h3>
+          <p className="text-sm text-dim">
+            {materi > 0 ? `Modul #${materi}` : "Modul Pembelajaran"} · est. {jam} Jam
+          </p>
         </div>
       </div>
 
-      {/* Tombol dengan Navigasi Link */}
-      {status === "progress" && (
+      {/* Single Direct Action Button */}
+      <div className="mt-2">
         <Link
           href={detailHref}
-          className="block text-center w-full py-3 bg-brand cursor-pointer hover:bg-brand-hover text-white font-jakarta font-bold text-sm rounded-xl transition-all active:scale-95"
-        >
-          Lanjut Belajar
-        </Link>
-      )}
-      {status === "done" && (
-        <Link
-          href={detailHref}
-          className="block text-center w-full py-3 bg-transparent border border-brand text-brand hover:bg-brand/10 font-jakarta font-bold text-sm rounded-xl transition-all"
-        >
-          ✓ Selesai (Baca Ulang)
-        </Link>
-      )}
-      {status === "start" && (
-        <Link
-          href={detailHref}
-          className="block text-center w-full py-3 cursor-pointer bg-brand hover:bg-brand-hover text-white font-jakarta font-bold text-sm rounded-xl transition-all active:scale-95"
+          className="block w-full cursor-pointer rounded-xl bg-brand py-3 text-center font-jakarta text-sm font-bold text-white transition-all hover:bg-brand-hover active:scale-95"
         >
           Mulai Belajar
         </Link>
-      )}
-      {status === "locked" && (
-        <button
-          disabled
-          className="w-full py-3 bg-elevated text-dim font-jakarta font-bold text-sm rounded-xl cursor-not-allowed"
-        >
-          🔒 Selesaikan prasyarat dulu
-        </button>
-      )}
+      </div>
     </div>
   );
 }
