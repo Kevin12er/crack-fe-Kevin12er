@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/app/components/layout/Navbar";
 import { fetchApi } from "@/lib/api";
 
 export default function LatihanSoalPage() {
@@ -29,7 +28,6 @@ export default function LatihanSoalPage() {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen bg-base p-4 text-primary font-jakarta md:p-8">
         <div className="mx-auto max-w-5xl space-y-6">
           <div className="border-b border-line pb-4">
