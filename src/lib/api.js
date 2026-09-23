@@ -38,3 +38,19 @@ export async function fetchApi(endpoint, options = {}) {
 
   return data;
 }
+
+export async function getCourses(filters = {}) {
+  const queryParams = new URLSearchParams();
+
+  if (filters.search) queryParams.append("search", filters.search);
+  if (filters.category) queryParams.append("category", filters.category);
+  if (filters.minPrice !== undefined && filters.minPrice !== "") {
+    queryParams.append("minPrice", filters.minPrice);
+  }
+  if (filters.maxPrice !== undefined && filters.maxPrice !== "") {
+    queryParams.append("maxPrice", filters.maxPrice);
+  }
+
+  const queryString = queryParams.toString();
+  return fetchApi(`/courses${queryString ? `?${queryString}` : ""}`);
+}
