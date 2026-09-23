@@ -116,6 +116,14 @@ export default function Navbar() {
                 Materi
               </Link>
             </li>
+                        <li>
+              <Link
+                href="/courses"
+                className="hover:text-white transition-colors duration-200"
+              >
+               Katalog Kelas
+              </Link>
+            </li>
           </ul>
         </nav>
 
