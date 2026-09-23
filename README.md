@@ -2,12 +2,25 @@
 
 Platform pembelajaran online matematika yang dibangun dengan Next.js untuk mendukung proses belajar mengajar matematika antara guru dan siswa.
 
-## Fitur Utama
+##  Fitur Utama
 
-- **Dashboard Guru**: Mengelola soal, melihat hasil siswa, dan mengelola materi pembelajaran
-- **Dashboard Siswa**: Mengakses materi, mengerjakan latihan soal, dan melihat nilai
-- **Autentikasi**: Sistem login dan registrasi untuk guru dan siswa
-- **Manajemen Nilai**: Tracking hasil dan performa siswa
+- **Dashboard Guru (Instructor)**
+  - Pengelolaan materi pembelajaran (*CRUD Course & Materials*).
+  - Manajemen bank soal dan kuis interaktif.
+  - Pemantauan (*tracking*) statistik hasil belajar dan nilai siswa.
+
+- **Dashboard Siswa (Student)**
+  - Akses modul pembelajaran dan materi interaktif.
+  - Pengerjaan latihan soal dan kuis secara *real-time*.
+  - Riwayat nilai dan laporan perkembangan belajar mandiri.
+
+- **Autentikasi & Otorisasi (RBAC)**
+  - Sistem Login dan Registrasi berbasis JWT (*JSON Web Token*).
+  - Proteksi *route* berdasarkan *Role-Based Access Control* (Guru vs. Siswa).
+
+- **Manajemen Nilai & Evaluasi**
+  - Kalkulasi skor otomatis setelah pengerjaan kuis.
+  - Laporan rekapitulasi performa dan riwayat evaluasi siswa.
 
 ## Teknologi
 
@@ -15,38 +28,75 @@ Platform pembelajaran online matematika yang dibangun dengan Next.js untuk mendu
 - **Styling**: Tailwind CSS 4
 - **Form**: React Hook Form
 - **Runtime**: Node.js
+- **Deploy**: Vercel
 
 ##  Struktur Folder Project
 
 ```text
-src/
-├── app/
-│   ├── components/
-│   │   ├── layout/          # Navbar & Footer
-│   │   └── ui/              # Komponen UI Reusable (Card, Marquee)
-│   ├── context/             # AuthContext (Sesi & Role User)
-│   ├── dashboard/           # Modul Dashboard Utama
-│   │   ├── greeting.jsx     # Komponen Ucapan Dinamis
-│   │   ├── guru/            # Fitur & Halaman Pengajar
-│   │   │   ├── components/  # FormTambahSoal, TabelHasilSiswa
-│   │   │   ├── hasil/       # Rekap Hasil Siswa
-│   │   │   ├── kelola-soal/ # Bank Soal & Editing
-│   │   │   ├── kuis/        # Manajemen Kuis Guru
-│   │   │   └── materi/      # Publikasi Materi
-│   │   └── siswa/           # Fitur & Halaman Siswa
-│   │       ├── components/  # ContinueCard, ProgressCard, StatCards
-│   │       ├── kuis/        # Pengerjaan Kuis Dynamic (`/kuis/[id]`)
-│   │       ├── latihan-soal/# Daftar Kuis/Latihan Soal
-│   │       └── materi/      # Modul Baca Materi (`/materi/[id]`)
-│   ├── login/               # Halaman Authentikasi Login
-│   ├── register/            # Halaman Registrasi Akun
-│   ├── nilai/               # Halaman Rekap Nilai Siswa
-│   ├── pengaturan/          # Halaman Pengaturan Akun
-│   ├── layout.jsx           # Root Layout Application
-│   ├── page.jsx             # Landing / Hero Page
-│   └── globals.css          # Global Styling & Theme
-└── lib/
-    └── api.js               # Central API Client Fetcher
+src
+├── app
+│   ├── components
+│   │   ├── layout
+│   │   │   ├── Footer.jsx
+│   │   │   └── Navbar.jsx
+│   │   └── ui
+│   │       ├── Card.jsx
+│   │       └── Marquee.jsx
+│   ├── context
+│   │   └── authcontext.jsx
+│   ├── courses
+│   │   ├── [id]
+│   │   │   └── page.jsx
+│   │   └── page.jsx
+│   ├── dashboard
+│   │   ├── greeting.jsx
+│   │   ├── guru
+│   │   │   ├── components
+│   │   │   │   ├── FormTambahSoal.jsx
+│   │   │   │   └── TabelHasilSiswa.jsx
+│   │   │   ├── hasil
+│   │   │   │   └── page.jsx
+│   │   │   ├── kelola-soal
+│   │   │   │   └── page.jsx
+│   │   │   ├── layout.jsx
+│   │   │   ├── materi
+│   │   │   │   └── page.jsx
+│   │   │   └── page.jsx
+│   │   ├── sidebar.jsx
+│   │   └── siswa
+│   │       ├── components
+│   │       │   ├── continuecard.jsx
+│   │       │   ├── progresscard.jsx
+│   │       │   └── statcards.jsx
+│   │       ├── kuis
+│   │       │   ├── [id]
+│   │       │   │   └── page.jsx
+│   │       │   └── page.jsx
+│   │       ├── latihan-soal
+│   │       │   └── page.jsx
+│   │       ├── layout.jsx
+│   │       ├── materi
+│   │       │   ├── components
+│   │       │   │   └── MateriCards.jsx
+│   │       │   ├── [id]
+│   │       │   │   └── page.jsx
+│   │       │   └── page.jsx
+│   │       ├── nilai
+│   │       │   └── page.jsx
+│   │       └── page.jsx
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── layout.jsx
+│   ├── login
+│   │   └── page.jsx
+│   ├── page.jsx
+│   ├── pengaturan
+│   │   └── page.jsx
+│   └── register
+│       └── page.jsx
+└── lib
+    └── api.js
+```
 
 ## Memulai
 
@@ -70,6 +120,10 @@ src/
 - `npm run build` - Build untuk production
 - `npm start` - Jalankan production server
 - `npm run lint` - Jalankan linter
+
+## Live URL LearnBridge
+[LearnBridge Website](https://crack-fe-kevin12er.vercel.app/)
+
 
 ## Screenshot
 
