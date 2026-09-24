@@ -1,3 +1,4 @@
+// src/app/dashboard/siswa/materi/[id]/page.js
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -121,7 +122,7 @@ export default function DetailMateriPage({ params }) {
               </span>
               <Link
                 href="/dashboard/siswa/materi"
-                className="cursor-pointer rounded-xl bg-brand px-5 py-2.5 text-xs font-bold text-primary transition-all hover:bg-brand-hover"
+                className="cursor-pointer rounded-xl bg-brand px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-brand-hover active:scale-95"
               >
                 Selesai Membaca
               </Link>

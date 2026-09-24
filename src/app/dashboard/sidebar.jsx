@@ -22,6 +22,11 @@ const navItems = [
     icon: "✏️",
   },
   {
+    href: "/dashboard/siswa/kuis",
+    label: "Kuis",
+    icon: "⏰",
+  },
+  {
     href: "/dashboard/siswa/nilai",
     label: "Nilai Saya",
     icon: "📊",

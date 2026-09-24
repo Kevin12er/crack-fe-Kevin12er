@@ -1,3 +1,4 @@
+// src/app/dashboard/siswa/nilai/page.jsx
 "use client";
 
 import Link from "next/link";
@@ -138,7 +139,7 @@ export default function NilaiSiswaDashboardPage() {
 
           <Link
             href="/dashboard/siswa"
-            className="w-fit rounded-xl border border-brand-ring bg-brand-soft px-4 py-2 text-xs font-bold text-brand transition-colors hover:bg-brand/20"
+            className="w-fit rounded-xl border border-brand/30 bg-brand/10 px-4 py-2 text-xs font-bold text-brand transition-colors hover:bg-brand/20"
           >
             &larr; Kembali ke Dashboard
           </Link>
@@ -168,7 +169,7 @@ export default function NilaiSiswaDashboardPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
               Lulus (&gt;= 75)
             </p>
-            <h3 className="mt-2 text-3xl font-extrabold text-av-blue">
+            <h3 className="mt-2 text-3xl font-extrabold text-brand">
               {totalLulus}
             </h3>
           </div>
@@ -237,9 +238,9 @@ export default function NilaiSiswaDashboardPage() {
                         <span
                           className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
                             status === "Lulus"
-                              ? "border border-brand-ring bg-brand-soft text-brand"
+                              ? "border border-brand/30 bg-brand/10 text-brand"
                               : status === "Remedial"
-                                ? "border border-av-red/40 bg-red-950/40 text-av-red"
+                                ? "border border-av-red/30 bg-av-red/10 text-av-red"
                                 : "border border-line bg-base text-secondary"
                           }`}
                         >
@@ -254,7 +255,7 @@ export default function NilaiSiswaDashboardPage() {
                   <tr>
                     <td
                       colSpan={5}
-                      className="p-8 text-center text-xs text-muted"
+                      className="p-8 text-center text-xs text-secondary"
                     >
                       Belum ada data nilai untuk topik yang dipilih.
                     </td>
