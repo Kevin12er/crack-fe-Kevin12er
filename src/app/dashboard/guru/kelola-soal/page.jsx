@@ -15,6 +15,9 @@ export default function KelolaSoalPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // State untuk kontrol Accordion (Kuis mana yang lagi terbuka/expanded)
+  const [openQuizIds, setOpenQuizIds] = useState([]);
+
   // State Form Buat Kuis Baru
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [quizTitle, setQuizTitle] = useState("");
@@ -32,15 +35,14 @@ export default function KelolaSoalPage() {
     { optionText: "", isCorrect: false },
   ]);
 
-  // State untuk menyimpan data modal edit
+  // State Modal Edit Soal
   const [editingSoal, setEditingSoal] = useState(null);
 
-  // Load Quizzes, Courses, dan Soal secara Dynamic dari API
+  // Load Data
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
 
-      // 1. Fetch courses & quizzes
       const [coursesData, quizzesData] = await Promise.all([
         fetchApi("/courses").catch(() => []),
         fetchApi("/quizzes").catch(() => []),
@@ -54,7 +56,6 @@ export default function KelolaSoalPage() {
 
       let allQuestions = [];
 
-      // 2. Fetch soal untuk setiap kuis (pola aman sesuai commit kamu)
       for (const quiz of quizList) {
         if (quiz?.id) {
           try {
@@ -63,6 +64,7 @@ export default function KelolaSoalPage() {
 
             const formatted = questions.map((q) => ({
               id: q.id,
+              quizId: quiz.id,
               pertanyaan: q.questionText || q.question || "Pertanyaan tanpa judul",
               mapel: quiz.title || quiz.course?.name || "Kuis Evaluasi",
               tipe: q.type || "Pilihan Ganda",
@@ -89,7 +91,16 @@ export default function KelolaSoalPage() {
     loadData();
   }, [loadData]);
 
-  // Handler Buat Kuis Baru (POST /quizzes)
+  // Toggle Buka/Tutup Accordion
+  const toggleQuizAccordion = (quizId) => {
+    setOpenQuizIds((prev) =>
+      prev.includes(quizId)
+        ? prev.filter((id) => id !== quizId)
+        : [...prev, quizId]
+    );
+  };
+
+  // Handler Buat Kuis Baru
   const handleCreateQuiz = async (e) => {
     e.preventDefault();
     if (!selectedCourseId || !quizTitle || !timeLimit) {
@@ -109,7 +120,7 @@ export default function KelolaSoalPage() {
         }),
       });
 
-      alert("🎉 Kuis berhasil dibuat!");
+      alert("Kuis berhasil dibuat!");
       setQuizTitle("");
       setQuizDescription("");
       setTimeLimit(15);
@@ -121,7 +132,30 @@ export default function KelolaSoalPage() {
     }
   };
 
-  // Handler Tambah Soal ke Kuis (POST /quiz-questions & POST /quiz-options)
+  // Handler Hapus Kuis
+  const handleDeleteQuiz = async (quizId, quizTitle) => {
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin menghapus kuis "${quizTitle}"?\n\nSemua soal di dalam kuis ini juga akan terhapus!`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await fetchApi(`/quizzes/${quizId}`, {
+        method: "DELETE",
+      });
+
+      alert("✅ Kuis beserta seluruh soal di dalamnya berhasil dihapus!");
+      loadData();
+    } catch (err) {
+      console.error("Gagal menghapus kuis:", err);
+      alert("Gagal menghapus kuis: " + err.message);
+    }
+  };
+
+  // Handler Tambah Soal ke Kuis
   const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!questionText.trim()) {
@@ -157,6 +191,12 @@ export default function KelolaSoalPage() {
       }
 
       alert("✅ Soal berhasil ditambahkan!");
+      
+      // Auto-open accordion kuis yang baru ditambah soalnya
+      if (!openQuizIds.includes(activeQuizForQuestion.id)) {
+        setOpenQuizIds((prev) => [...prev, activeQuizForQuestion.id]);
+      }
+
       setActiveQuizForQuestion(null);
       setQuestionText("");
       setOptions([
@@ -173,7 +213,7 @@ export default function KelolaSoalPage() {
     }
   };
 
-  // Handler Hapus Soal (DELETE /quiz-questions/:id)
+  // Handler Hapus Soal
   const handleDeleteQuestion = async (questionId) => {
     if (!confirm("Apakah Anda yakin ingin menghapus soal ini?")) return;
 
@@ -190,7 +230,7 @@ export default function KelolaSoalPage() {
     }
   };
 
-  // Handler Simpan Edit Soal secara UI
+  // Handler Simpan Edit Soal
   const handleSaveEdit = (e) => {
     e.preventDefault();
     setDaftarSoal((prev) =>
@@ -199,13 +239,11 @@ export default function KelolaSoalPage() {
     setEditingSoal(null);
   };
 
-  const soalFiltered = daftarSoal.filter((soal) => {
-    const matchSearch = String(soal.pertanyaan || "")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+  // Filter Kuis berdasarkan Dropdown Filter
+  const quizzesFiltered = daftarQuizzes.filter((q) => {
     const matchMapel =
-      selectedMapel === "Semua" || soal.mapel === selectedMapel;
-    return matchSearch && matchMapel;
+      selectedMapel === "Semua" || q.title === selectedMapel || q.course?.name === selectedMapel;
+    return matchMapel;
   });
 
   return (
@@ -224,15 +262,20 @@ export default function KelolaSoalPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-extrabold text-primary">
-                Kelola <span className="text-brand">Bank Soal</span>
+                Kelola <span className="text-brand">Kuis & Bank Soal</span>
               </h1>
               <p className="text-sm text-secondary mt-1">
-                Daftar seluruh soal evaluasi yang telah dibuat oleh pengajar.
+                Susun materi evaluasi, set durasi timer, dan kelola kelengkapan soal.
               </p>
             </div>
-            <span className="text-xs bg-brand-soft text-brand border border-brand-ring px-3 py-1.5 rounded-lg font-semibold w-fit">
-              Total Soal: {daftarSoal.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-brand-soft text-brand border border-brand-ring px-3 py-1.5 rounded-lg font-semibold">
+                Total Kuis: {daftarQuizzes.length}
+              </span>
+              <span className="text-xs bg-brand-soft text-brand border border-brand-ring px-3 py-1.5 rounded-lg font-semibold">
+                Total Soal: {daftarSoal.length}
+              </span>
+            </div>
           </div>
 
           {/* FORM BUAT KUIS BARU */}
@@ -312,58 +355,23 @@ export default function KelolaSoalPage() {
             </form>
           </div>
 
-          {/* DAFTAR KUIS & TOMBOL TAMBAH SOAL */}
-          <div className="space-y-3">
-            <h2 className="font-bold text-primary">Pilih Kuis Untuk Tambah Soal</h2>
-            {daftarQuizzes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {daftarQuizzes.map((q) => (
-                  <div
-                    key={q.id}
-                    className="bg-surface border border-line rounded-2xl p-4 flex justify-between items-center gap-4"
-                  >
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-brand bg-brand-soft px-2 py-0.5 rounded uppercase">
-                        ⏱️ {q.timeLimit || 0} Menit
-                      </span>
-                      <h3 className="text-sm font-bold text-primary">{q.title}</h3>
-                      <p className="text-xs text-secondary line-clamp-1">
-                        {q.description || "Tidak ada deskripsi."}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveQuizForQuestion(q)}
-                      className="px-3 py-2 text-xs font-bold bg-brand/10 border border-brand/30 text-brand hover:bg-brand hover:text-white rounded-xl transition-all cursor-pointer whitespace-nowrap"
-                    >
-                      + Tambah Soal
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-surface border border-dashed border-line rounded-2xl p-6 text-center text-xs text-secondary">
-                Belum ada kuis. Buat kuis di atas terlebih dahulu.
-              </div>
-            )}
-          </div>
-
-          {/* Filter & Search Bar */}
+          {/* FILTER & SEARCH BAR */}
           <div className="flex flex-col sm:flex-row gap-4 justify-between bg-surface p-4 rounded-2xl border border-line">
             <input
               type="text"
-              placeholder="Cari pertanyaan..."
+              placeholder="Cari pertanyaan soal..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full sm:w-80 bg-base border border-line rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand"
             />
             <div className="flex items-center gap-2">
-              <span className="text-xs text-secondary font-medium">Mapel:</span>
+              <span className="text-xs text-secondary font-medium">Filter Kuis:</span>
               <select
                 value={selectedMapel}
                 onChange={(e) => setSelectedMapel(e.target.value)}
                 className="bg-base border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand"
               >
-                <option value="Semua">Semua Mata Pelajaran</option>
+                <option value="Semua">Semua Kuis</option>
                 {daftarQuizzes.map((q) => (
                   <option key={q.id} value={q.title || q.course?.name}>
                     {q.title || q.course?.name}
@@ -373,64 +381,139 @@ export default function KelolaSoalPage() {
             </div>
           </div>
 
-          {/* Daftar Soal */}
+          {/* DAFTAR KUIS & SOAL DALAM BENTUK ACCORDION */}
           <div className="space-y-4">
+            <h2 className="font-bold text-primary text-lg">
+              Daftar Kuis & Bank Soal
+            </h2>
+
             {loading ? (
               <div className="bg-surface border border-line rounded-2xl p-8 text-center text-xs text-secondary">
                 Memuat bank soal dari database...
               </div>
-            ) : (
-              soalFiltered.map((item, index) => (
-                <div
-                  key={item.id || index}
-                  className="bg-surface border border-line rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-                >
-                  <div className="space-y-2 max-w-3xl">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold bg-brand-soft text-brand border border-brand-ring px-2.5 py-0.5 rounded">
-                        {item.mapel}
-                      </span>
-                      <span className="text-xs text-secondary bg-base border border-line px-2.5 py-0.5 rounded">
-                        {item.tipe}
-                      </span>
+            ) : quizzesFiltered.length > 0 ? (
+              quizzesFiltered.map((quiz) => {
+                // Ambil soal yang termasuk dalam kuis ini
+                const quizQuestions = daftarSoal.filter(
+                  (s) =>
+                    s.quizId === quiz.id &&
+                    String(s.pertanyaan || "")
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())
+                );
+
+                const isOpen = openQuizIds.includes(quiz.id);
+
+                return (
+                  <div
+                    key={quiz.id}
+                    className="bg-surface border border-line rounded-2xl overflow-hidden transition-all shadow-sm"
+                  >
+                    {/* Header Accordion Kuis */}
+                    <div className="p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-surface hover:bg-base/40 transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-brand bg-brand-soft border border-brand-ring px-2 py-0.5 rounded uppercase">
+                            ⏱️ {quiz.timeLimit || 0} Menit
+                          </span>
+                          <span className="text-[10px] font-bold text-secondary bg-base border border-line px-2 py-0.5 rounded">
+                            {quizQuestions.length} Soal
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-primary">
+                          {quiz.title}
+                        </h3>
+                        <p className="text-xs text-secondary line-clamp-1">
+                          {quiz.description || "Tidak ada deskripsi kuis."}
+                        </p>
+                      </div>
+
+                      {/* Tombol Aksi Kuis */}
+                      <div className="flex items-center gap-2 self-end md:self-center">
+                        <button
+                          onClick={() => setActiveQuizForQuestion(quiz)}
+                          className="px-3 py-1.5 text-xs font-bold bg-brand/10 border border-brand/30 text-brand hover:bg-brand hover:text-white rounded-xl transition-all cursor-pointer whitespace-nowrap"
+                        >
+                          + Tambah Soal
+                        </button>
+                        <button
+                          onClick={() => handleDeleteQuiz(quiz.id, quiz.title)}
+                          className="p-1.5 text-xs font-bold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all cursor-pointer"
+                          title="Hapus Kuis"
+                        >
+                          🗑️
+                        </button>
+                        <button
+                          onClick={() => toggleQuizAccordion(quiz.id)}
+                          className="px-3 py-1.5 text-xs font-bold bg-base border border-line hover:border-brand rounded-xl text-primary transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          {isOpen ? "Tutup Soal 🔼" : "Lihat Soal 🔽"}
+                        </button>
+                      </div>
                     </div>
-                    <h3 className="text-sm font-semibold text-primary">
-                      {index + 1}. {item.pertanyaan}
-                    </h3>
-                    <p className="text-xs text-secondary">
-                      <strong className="text-primary">Kunci:</strong>{" "}
-                      {item.kunci}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-                    <button
-                      onClick={() => setEditingSoal(item)}
-                      className="px-3 py-1.5 text-xs font-semibold bg-base border border-line hover:border-brand rounded-lg transition-colors cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteQuestion(item.id)}
-                      className="px-3 py-1.5 text-xs font-semibold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-colors cursor-pointer"
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+                    {/* Body Accordion: Daftar Soal Kuis ini */}
+                    {isOpen && (
+                      <div className="border-t border-line bg-base/50 p-4 space-y-3">
+                        {quizQuestions.length > 0 ? (
+                          quizQuestions.map((item, index) => (
+                            <div
+                              key={item.id || index}
+                              className="bg-surface border border-line rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-xs"
+                            >
+                              <div className="space-y-1 max-w-3xl">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-secondary bg-base border border-line px-2 py-0.5 rounded uppercase font-semibold">
+                                    {item.tipe}
+                                  </span>
+                                </div>
+                                <h4 className="text-xs md:text-sm font-semibold text-primary">
+                                  {index + 1}. {item.pertanyaan}
+                                </h4>
+                                <p className="text-xs text-secondary">
+                                  <strong className="text-primary">Kunci:</strong>{" "}
+                                  <span className="text-brand font-medium">
+                                    {item.kunci}
+                                  </span>
+                                </p>
+                              </div>
 
-            {!loading && soalFiltered.length === 0 && (
+                              <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                                <button
+                                  onClick={() => setEditingSoal(item)}
+                                  className="px-2.5 py-1 text-xs font-semibold bg-base border border-line hover:border-brand rounded-lg transition-colors cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteQuestion(item.id)}
+                                  className="px-2.5 py-1 text-xs font-semibold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-colors cursor-pointer"
+                                >
+                                  Hapus
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-xs text-secondary italic">
+                            Belum ada soal di kuis ini. Klik "+ Tambah Soal" di atas untuk menambahkan.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
               <div className="bg-surface border border-line rounded-2xl p-8 text-center text-xs text-muted">
-                Belum ada soal yang tersimpan di bank soal.
+                Belum ada kuis yang terbuat.
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Modal Popup Tambah Soal */}
+      {/* MODAL POPUP TAMBAH SOAL */}
       {activeQuizForQuestion && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-surface border border-line p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -535,7 +618,7 @@ export default function KelolaSoalPage() {
         </div>
       )}
 
-      {/* Modal Popup Edit Soal */}
+      {/* MODAL POPUP EDIT SOAL */}
       {editingSoal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-surface border border-line p-6 rounded-2xl max-w-lg w-full space-y-4">

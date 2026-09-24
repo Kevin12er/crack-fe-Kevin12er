@@ -114,7 +114,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/dashboard/guru/kelola-soal"
-                  className="hover:text-white text-emerald-400 font-semibold transition-colors duration-200"
+                  className="hover:text-white transition-colors duration-200"
                 >
                   Kelola Soal
                 </Link>
@@ -223,7 +223,7 @@ export default function Navbar() {
               href="/dashboard/guru/kelola-soal"
               role="menuitem"
               onClick={() => setIsOpen(false)}
-              className="font-jakarta text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors duration-200"
+              className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
             >
               Kelola Soal
             </Link>
