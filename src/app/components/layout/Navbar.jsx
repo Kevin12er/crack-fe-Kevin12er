@@ -108,6 +108,19 @@ export default function Navbar() {
                 </Link>
               </li>
             )}
+
+            {/* Navigasi Khusus Guru: Kelola Soal */}
+            {isAuthenticated && isGuru && (
+              <li>
+                <Link
+                  href="/dashboard/guru/kelola-soal"
+                  className="hover:text-white text-emerald-400 font-semibold transition-colors duration-200"
+                >
+                  Kelola Soal
+                </Link>
+              </li>
+            )}
+
             <li>
               <Link
                 href={materiHref}
@@ -116,12 +129,12 @@ export default function Navbar() {
                 Materi
               </Link>
             </li>
-                        <li>
+            <li>
               <Link
                 href="/courses"
                 className="hover:text-white transition-colors duration-200"
               >
-               Katalog Kelas
+                Katalog Kelas
               </Link>
             </li>
           </ul>
@@ -203,6 +216,19 @@ export default function Navbar() {
               Dashboard
             </Link>
           )}
+
+          {/* Mobile Menu Khusus Guru: Kelola Soal */}
+          {isAuthenticated && isGuru && (
+            <Link
+              href="/dashboard/guru/kelola-soal"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="font-jakarta text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors duration-200"
+            >
+              Kelola Soal
+            </Link>
+          )}
+
           <Link
             href={materiHref}
             role="menuitem"
@@ -210,6 +236,15 @@ export default function Navbar() {
             className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
           >
             Materi
+          </Link>
+
+          <Link
+            href="/courses"
+            role="menuitem"
+            onClick={() => setIsOpen(false)}
+            className="font-jakarta text-sm font-bold text-muted hover:text-white transition-colors duration-200"
+          >
+            Katalog Kelas
           </Link>
 
           <hr className="border-line" />
