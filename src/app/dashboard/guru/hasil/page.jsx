@@ -27,11 +27,13 @@ export default function HasilUjianGuruPage() {
       const resultsList = Array.isArray(results) ? results : [];
       const attemptsList = Array.isArray(attempts) ? attempts : [];
 
+      // Pakai penggabungan sederhana bawaan kode kamu sebelumnya
       const rawAllData = [...resultsList, ...attemptsList];
 
       const formatted = rawAllData.map((res, idx) => {
         const studentObj = res.student || res.user;
-        const namaSiswa = studentObj?.name || res.studentName || res.userName || "Siswa";
+        const namaSiswa =
+          studentObj?.name || res.studentName || res.userName || "Siswa";
 
         const namaMapel =
           res.course?.name ||
@@ -45,13 +47,20 @@ export default function HasilUjianGuruPage() {
           "Bank Soal Evaluasi";
 
         const rawScore = res.score ?? res.nilai ?? res.scoreObtained;
-        const rawDate = res.createdAt || res.updatedAt;
+        const rawDate = res.createdAt || res.updatedAt || res.submittedAt;
         const tanggal = rawDate
           ? new Date(rawDate).toISOString().split("T")[0]
-          : "2026-09-19";
+          : "-";
 
         const validAttemptId = res.quizAttemptId || res.attemptId || res.id;
         const numericScore = typeof rawScore === "number" ? Math.round(rawScore) : 0;
+
+        // STATUS: Cek status dari backend (SUBMITTED) atau score null
+        const isSubmitted =
+          res.status === "SUBMITTED" ||
+          res.attempt?.status === "SUBMITTED" ||
+          rawScore === null ||
+          rawScore === undefined;
 
         return {
           id: res.id || idx + 1,
@@ -61,8 +70,8 @@ export default function HasilUjianGuruPage() {
           judulKuis: judulKuis,
           tanggal: tanggal,
           nilai: numericScore,
-          // Logika: Skor 0 mengindikasikan butuh evaluasi (Essay / Remedial Total)
-          needsEvaluation: numericScore === 0,
+          // Butuh evaluasi jika statusnya SUBMITTED atau skornya belum ada/null
+          needsEvaluation: isSubmitted,
         };
       });
 
@@ -110,7 +119,7 @@ export default function HasilUjianGuruPage() {
   });
 
   const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
-  const lulus = dataHasil.filter((s) => s.nilai >= 75).length;
+  const lulus = dataHasil.filter((s) => !s.needsEvaluation && s.nilai >= 75).length;
   const perluEvaluasi = dataHasil.filter((s) => s.needsEvaluation).length;
 
   const daftarOptionMapel = [

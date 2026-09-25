@@ -20,7 +20,7 @@ export default function NilaiSiswaDashboardPage() {
     try {
       setLoading(true);
 
-      // Ambil data attempt kuis dan daftar kuis dari backend NestJS
+      // 1. Ambil data attempt siswa dan daftar kuis dari backend NestJS
       const [attemptsData, quizzesData] = await Promise.all([
         fetchApi("/quiz-attempts/my-attempts").catch(() =>
           fetchApi("/quiz-attempts").catch(() => [])
@@ -31,35 +31,42 @@ export default function NilaiSiswaDashboardPage() {
       const rawAttempts = Array.isArray(attemptsData) ? attemptsData : [];
       const quizList = Array.isArray(quizzesData) ? quizzesData : [];
 
-      const formattedData = quizList.map((quiz) => {
-        // Cari riwayat pengerjaan terakhir untuk kuis ini
-        const userAttempt = rawAttempts.find((a) => {
-          const aQuizId = a.quizId || a.quiz?.id;
-          return String(aQuizId) === String(quiz.id);
-        });
+      // 2. Map dari riwayat pengerjaan (Attempt) yang nyata di database
+      const formattedData = rawAttempts.map((attempt) => {
+        // Cari info quiz pendukung jika ada
+        const relatedQuiz = quizList.find(
+          (q) => String(q.id) === String(attempt.quizId || attempt.quiz?.id)
+        );
 
+        const quizTitle =
+          attempt.quiz?.title || relatedQuiz?.title || "Kuis Evaluasi";
         const topikName =
-          quiz.course?.name || quiz.course?.title || "Matematika Dasar SMK";
+          attempt.quiz?.course?.title ||
+          attempt.quiz?.course?.name ||
+          relatedQuiz?.course?.title ||
+          relatedQuiz?.course?.name ||
+          "Matematika SMK";
 
-        const isDone = Boolean(userAttempt);
-        const attemptStatus = userAttempt?.status || (isDone ? "GRADED" : "NOT_STARTED");
+        const attemptStatus = attempt.status || "GRADED";
+        const isSubmitted = attemptStatus === "SUBMITTED";
 
-        // Pembulatan skor jika sudah di-graded
-        const rawScore = userAttempt?.score ?? userAttempt?.result?.score ?? 0;
-        const score = isDone && attemptStatus === "GRADED" ? Math.round(Number(rawScore)) : 0;
+        const rawScore = attempt.score ?? attempt.result?.score;
+        const score =
+          typeof rawScore === "number" ? Math.round(rawScore) : 0;
 
-        const rawDate = userAttempt?.submittedAt || userAttempt?.createdAt;
+        const rawDate = attempt.submittedAt || attempt.createdAt;
         const formattedDate = rawDate
           ? new Date(rawDate).toISOString().split("T")[0]
           : "-";
 
         return {
-          id: quiz.id,
+          id: attempt.id,
+          quizId: attempt.quizId || attempt.quiz?.id,
           topik: topikName,
-          judul: quiz.title || "Kuis Evaluasi",
+          judul: quizTitle,
           nilai: score,
-          dikerjakan: isDone,
           statusAttempt: attemptStatus,
+          isSubmitted: isSubmitted,
           tanggal: formattedDate,
         };
       });
@@ -98,16 +105,13 @@ export default function NilaiSiswaDashboardPage() {
     return riwayatNilai.filter((item) => item.topik === selectedTopik);
   }, [selectedTopik, riwayatNilai]);
 
-  // Hanya hitung statistik dari kuis yang sudah selesai dinilai (GRADED)
+  // Statistik hanya menghitung yang sudah GRADED
   const itemGraded = useMemo(
-    () => riwayatNilai.filter((item) => item.dikerjakan && item.statusAttempt === "GRADED"),
+    () => riwayatNilai.filter((item) => !item.isSubmitted),
     [riwayatNilai]
   );
 
-  const totalDikerjakan = useMemo(
-    () => riwayatNilai.filter((item) => item.dikerjakan).length,
-    [riwayatNilai]
-  );
+  const totalDikerjakan = riwayatNilai.length;
 
   const totalLulus = useMemo(
     () => itemGraded.filter((item) => item.nilai >= 75).length,
@@ -137,7 +141,7 @@ export default function NilaiSiswaDashboardPage() {
               Nilai <span className="text-brand">Saya</span>
             </h1>
             <p className="mt-1 text-sm text-secondary">
-              Pantau nilai kuis dan evaluasi pembelajaran Matematika Anda secara terstruktur.
+              Pantau nilai kuis dan evaluasi pembelajaran Anda secara terstruktur.
             </p>
           </div>
 
@@ -217,20 +221,15 @@ export default function NilaiSiswaDashboardPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {hasilFiltered.map((item) => {
-                  let statusBadge = "Belum Dikerjakan";
-                  let badgeStyle = "border border-line bg-base text-secondary";
+                  let statusBadge = "Lulus";
+                  let badgeStyle = "border border-brand/30 bg-brand/10 text-brand";
 
-                  if (item.dikerjakan) {
-                    if (item.statusAttempt === "SUBMITTED") {
-                      statusBadge = "⏳ Menunggu Evaluasi Guru";
-                      badgeStyle = "border border-amber-500/30 bg-amber-500/10 text-amber-500";
-                    } else if (item.nilai >= 75) {
-                      statusBadge = "Lulus";
-                      badgeStyle = "border border-brand/30 bg-brand/10 text-brand";
-                    } else {
-                      statusBadge = "Remedial";
-                      badgeStyle = "border border-av-red/30 bg-av-red/10 text-av-red";
-                    }
+                  if (item.isSubmitted) {
+                    statusBadge = "⏳ Menunggu Evaluasi Guru";
+                    badgeStyle = "border border-amber-500/30 bg-amber-500/10 text-amber-500";
+                  } else if (item.nilai < 75) {
+                    statusBadge = "Remedial";
+                    badgeStyle = "border border-av-red/30 bg-av-red/10 text-av-red";
                   }
 
                   return (
@@ -246,9 +245,7 @@ export default function NilaiSiswaDashboardPage() {
                         {item.tanggal}
                       </td>
                       <td className="p-4 font-extrabold text-brand">
-                        {!item.dikerjakan || item.statusAttempt === "SUBMITTED"
-                          ? "-"
-                          : item.nilai}
+                        {item.isSubmitted ? "-" : item.nilai}
                       </td>
                       <td className="p-4">
                         <span
@@ -267,7 +264,7 @@ export default function NilaiSiswaDashboardPage() {
                       colSpan={5}
                       className="p-8 text-center text-xs text-secondary"
                     >
-                      Belum ada data nilai untuk topik yang dipilih.
+                      Belum ada data nilai kuis yang dikerjakan.
                     </td>
                   </tr>
                 )}

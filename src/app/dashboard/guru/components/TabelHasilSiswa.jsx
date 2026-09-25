@@ -6,32 +6,34 @@ export default function TabelHasilSiswa({ dataHasil = [] }) {
   const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
 
   return (
-    <div className="bg-surface border border-line rounded-2xl overflow-hidden font-jakarta">
-      <Link
-        href="/dashboard/guru/hasil"
-        className="text-xs mt-4 ml-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"
-      >
-        Lihat Semua siswa &rarr;
-      </Link>
-
-      <div className="p-5 border-b border-line flex items-center justify-between">
+    <div className="rounded-2xl border border-line bg-surface font-jakarta overflow-hidden">
+      <div className="flex items-center justify-between p-5 border-b border-line">
         <div>
-          <h2 className="text-lg font-bold text-brand">Rekap Hasil Ujian Siswa</h2>
-          <p className="text-xs text-secondary mt-0.5">
+          <h2 className="text-lg font-bold text-brand">
+            Rekap Hasil Ujian Siswa
+          </h2>
+          <p className="mt-0.5 text-xs text-secondary">
             Daftar siswa yang telah menyelesaikan evaluasi
           </p>
         </div>
-        <span className="text-xs font-semibold bg-brand-soft text-brand border border-brand-ring px-3 py-1 rounded-full">
-          Total: {jumlahSiswaUnik} Siswa
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="rounded-full border border-brand-ring bg-brand-soft px-3 py-1 text-xs font-semibold text-brand">
+            Total: {jumlahSiswaUnik} Siswa
+          </span>
+          <Link
+            href="/dashboard/guru/hasil"
+            className="flex items-center gap-1 rounded-lg border border-brand-ring bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand transition-colors hover:underline"
+          >
+            Lihat Semua siswa &rarr;
+          </Link>
+        </div>
       </div>
 
-      <div className="overflow-x-auto max-h-87.5 overflow-y-auto">
+      <div className="max-h-87.5 overflow-x-auto overflow-y-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-base border-b border-line text-xs font-semibold text-secondary uppercase tracking-wider sticky top-0 z-10">
+          <thead className="sticky top-0 z-10 border-b border-line bg-base text-xs font-semibold uppercase tracking-wider text-secondary">
             <tr>
               <th className="p-4">Nama Siswa</th>
-              {/* Diubah sesuai masukan kamu */}
               <th className="p-4">Mata Pelajaran</th>
               <th className="p-4">Nama Kuis</th>
               <th className="p-4">Nilai</th>
@@ -39,33 +41,63 @@ export default function TabelHasilSiswa({ dataHasil = [] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {dataHasil.map((item) => (
-              <tr key={item.id} className="hover:bg-base/50 transition-colors">
-                <td className="p-4 font-semibold text-primary">{item.nama}</td>
-                {/* Kolom 1: Mata Pelajaran / Topik */}
-                <td className="p-4 text-secondary">{item.mapel}</td>
-                {/* Kolom 2: Nama Kuis / Evaluasi */}
-                <td className="p-4 text-secondary">{item.judulKuis}</td>
-                <td className="p-4 font-bold text-brand">
-                  {typeof item.nilai === "number" ? Math.round(item.nilai) : item.nilai}
-                </td>
-                <td className="p-4">
-                  <span
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${
-                      Number(item.nilai) >= 75
-                        ? "bg-brand-soft text-brand border-brand-ring"
-                        : "bg-red-950/40 text-av-red border-red-900"
-                    }`}
-                  >
-                    {Number(item.nilai) >= 75 ? "LULUS" : "REMEDIAL"}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {dataHasil.map((item) => {
+              const needsEval =
+                item.needsEvaluation ||
+                item.statusAttempt === "SUBMITTED" ||
+                item.status === "SUBMITTED" ||
+                item.nilai === null ||
+                item.nilai === undefined;
+
+              const isPassed = Number(item.nilai) >= 75;
+
+              return (
+                <tr
+                  key={item.id}
+                  className="transition-colors hover:bg-base/50"
+                >
+                  <td className="p-4 font-semibold text-primary">{item.nama}</td>
+                  <td className="p-4 text-secondary">{item.mapel}</td>
+                  <td className="p-4 text-secondary">{item.judulKuis}</td>
+
+                  {/* Kolom Nilai */}
+                  <td className="p-4 font-bold text-brand">
+                    {needsEval ? (
+                      <span className="text-xs font-semibold text-amber-500">
+                        Pending
+                      </span>
+                    ) : typeof item.nilai === "number" ? (
+                      Math.round(item.nilai)
+                    ) : (
+                      item.nilai ?? 0
+                    )}
+                  </td>
+
+                  {/* Kolom Status */}
+                  <td className="p-4">
+                    {needsEval ? (
+                      <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold text-amber-500">
+                        PERLU EVALUASI
+                      </span>
+                    ) : (
+                      <span
+                        className={`rounded-md border px-2.5 py-1 text-[10px] font-bold ${
+                          isPassed
+                            ? "border-brand-ring bg-brand-soft text-brand"
+                            : "border-red-900 bg-red-950/40 text-av-red"
+                        }`}
+                      >
+                        {isPassed ? "LULUS" : "REMEDIAL"}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
 
             {dataHasil.length === 0 && (
               <tr>
-                <td colSpan={5} className="text-center p-8 text-xs text-muted">
+                <td colSpan={5} className="p-8 text-center text-xs text-muted">
                   Belum ada siswa yang mengerjakan ujian.
                 </td>
               </tr>
