@@ -20,37 +20,35 @@ export default function NilaiSiswaDashboardPage() {
     try {
       setLoading(true);
 
-      // Ambil data hasil kuis dan daftar kuis dari backend NestJS
-      const [resultsData, attemptsData, quizzesData] = await Promise.all([
-        fetchApi("/results").catch(() => []),
-        fetchApi("/quiz-attempts").catch(() => []),
+      // Ambil data attempt kuis dan daftar kuis dari backend NestJS
+      const [attemptsData, quizzesData] = await Promise.all([
+        fetchApi("/quiz-attempts/my-attempts").catch(() =>
+          fetchApi("/quiz-attempts").catch(() => [])
+        ),
         fetchApi("/quizzes").catch(() => []),
       ]);
 
-      const rawResults = Array.isArray(resultsData) ? resultsData : [];
       const rawAttempts = Array.isArray(attemptsData) ? attemptsData : [];
       const quizList = Array.isArray(quizzesData) ? quizzesData : [];
 
-      // Gabungkan riwayat dari /results dan /quiz-attempts
-      const allHistory = [...rawResults, ...rawAttempts];
-
       const formattedData = quizList.map((quiz) => {
-        // Cari riwayat pengerjaan yang cocok dengan ID Kuis
-        const userResult = allHistory.find((r) => {
-          const rQuizId = r.quizId || r.quiz?.id;
-          return String(rQuizId) === String(quiz.id);
+        // Cari riwayat pengerjaan terakhir untuk kuis ini
+        const userAttempt = rawAttempts.find((a) => {
+          const aQuizId = a.quizId || a.quiz?.id;
+          return String(aQuizId) === String(quiz.id);
         });
 
         const topikName =
           quiz.course?.name || quiz.course?.title || "Matematika Dasar SMK";
 
-        const isDone = Boolean(userResult);
-        
-        // Pembulatan angka agar 33.33333333333333 menjadi 33
-        const rawScore = userResult?.score ?? userResult?.nilai ?? userResult?.scoreObtained ?? 0;
-        const score = isDone ? Math.round(Number(rawScore)) : 0;
+        const isDone = Boolean(userAttempt);
+        const attemptStatus = userAttempt?.status || (isDone ? "GRADED" : "NOT_STARTED");
 
-        const rawDate = userResult?.createdAt || userResult?.updatedAt;
+        // Pembulatan skor jika sudah di-graded
+        const rawScore = userAttempt?.score ?? userAttempt?.result?.score ?? 0;
+        const score = isDone && attemptStatus === "GRADED" ? Math.round(Number(rawScore)) : 0;
+
+        const rawDate = userAttempt?.submittedAt || userAttempt?.createdAt;
         const formattedDate = rawDate
           ? new Date(rawDate).toISOString().split("T")[0]
           : "-";
@@ -61,6 +59,7 @@ export default function NilaiSiswaDashboardPage() {
           judul: quiz.title || "Kuis Evaluasi",
           nilai: score,
           dikerjakan: isDone,
+          statusAttempt: attemptStatus,
           tanggal: formattedDate,
         };
       });
@@ -99,22 +98,27 @@ export default function NilaiSiswaDashboardPage() {
     return riwayatNilai.filter((item) => item.topik === selectedTopik);
   }, [selectedTopik, riwayatNilai]);
 
-  const itemDikerjakan = useMemo(
-    () => riwayatNilai.filter((item) => item.dikerjakan),
+  // Hanya hitung statistik dari kuis yang sudah selesai dinilai (GRADED)
+  const itemGraded = useMemo(
+    () => riwayatNilai.filter((item) => item.dikerjakan && item.statusAttempt === "GRADED"),
     [riwayatNilai]
   );
 
-  const totalDikerjakan = itemDikerjakan.length;
+  const totalDikerjakan = useMemo(
+    () => riwayatNilai.filter((item) => item.dikerjakan).length,
+    [riwayatNilai]
+  );
+
   const totalLulus = useMemo(
-    () => itemDikerjakan.filter((item) => item.nilai >= 75).length,
-    [itemDikerjakan]
+    () => itemGraded.filter((item) => item.nilai >= 75).length,
+    [itemGraded]
   );
 
   const rataRata = useMemo(() => {
-    if (totalDikerjakan === 0) return 0;
-    const sum = itemDikerjakan.reduce((acc, item) => acc + item.nilai, 0);
-    return Math.round(sum / totalDikerjakan);
-  }, [totalDikerjakan, itemDikerjakan]);
+    if (itemGraded.length === 0) return 0;
+    const sum = itemGraded.reduce((acc, item) => acc + item.nilai, 0);
+    return Math.round(sum / itemGraded.length);
+  }, [itemGraded]);
 
   if (!isHydrated || !isAuthenticated || user?.role !== "STUDENT") {
     return (
@@ -158,7 +162,7 @@ export default function NilaiSiswaDashboardPage() {
 
           <div className="rounded-2xl border border-line bg-surface p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
-              Latihan Dikerjakan
+              Kuis Dikerjakan
             </p>
             <h3 className="mt-2 text-3xl font-extrabold text-primary">
               {totalDikerjakan}
@@ -205,7 +209,7 @@ export default function NilaiSiswaDashboardPage() {
               <thead className="border-b border-line bg-base text-xs uppercase tracking-wider text-secondary">
                 <tr>
                   <th className="p-4">Topik</th>
-                  <th className="p-4">Latihan / Kuis</th>
+                  <th className="p-4">Kuis</th>
                   <th className="p-4">Tanggal</th>
                   <th className="p-4">Nilai</th>
                   <th className="p-4">Status</th>
@@ -213,11 +217,21 @@ export default function NilaiSiswaDashboardPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {hasilFiltered.map((item) => {
-                  const status = !item.dikerjakan
-                    ? "Belum Dikerjakan"
-                    : item.nilai >= 75
-                      ? "Lulus"
-                      : "Remedial";
+                  let statusBadge = "Belum Dikerjakan";
+                  let badgeStyle = "border border-line bg-base text-secondary";
+
+                  if (item.dikerjakan) {
+                    if (item.statusAttempt === "SUBMITTED") {
+                      statusBadge = "⏳ Menunggu Evaluasi Guru";
+                      badgeStyle = "border border-amber-500/30 bg-amber-500/10 text-amber-500";
+                    } else if (item.nilai >= 75) {
+                      statusBadge = "Lulus";
+                      badgeStyle = "border border-brand/30 bg-brand/10 text-brand";
+                    } else {
+                      statusBadge = "Remedial";
+                      badgeStyle = "border border-av-red/30 bg-av-red/10 text-av-red";
+                    }
+                  }
 
                   return (
                     <tr
@@ -232,19 +246,15 @@ export default function NilaiSiswaDashboardPage() {
                         {item.tanggal}
                       </td>
                       <td className="p-4 font-extrabold text-brand">
-                        {!item.dikerjakan ? "-" : item.nilai}
+                        {!item.dikerjakan || item.statusAttempt === "SUBMITTED"
+                          ? "-"
+                          : item.nilai}
                       </td>
                       <td className="p-4">
                         <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                            status === "Lulus"
-                              ? "border border-brand/30 bg-brand/10 text-brand"
-                              : status === "Remedial"
-                                ? "border border-av-red/30 bg-av-red/10 text-av-red"
-                                : "border border-line bg-base text-secondary"
-                          }`}
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${badgeStyle}`}
                         >
-                          {status}
+                          {statusBadge}
                         </span>
                       </td>
                     </tr>
