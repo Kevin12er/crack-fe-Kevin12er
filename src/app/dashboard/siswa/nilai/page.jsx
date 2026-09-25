@@ -135,6 +135,7 @@ export default function NilaiSiswaDashboardPage() {
   return (
     <section className="min-h-screen bg-base p-4 text-primary font-jakarta md:p-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        {/* Header Section */}
         <div className="flex flex-col gap-3 border-b border-line pb-5 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold md:text-3xl">
@@ -155,7 +156,7 @@ export default function NilaiSiswaDashboardPage() {
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-line bg-surface p-4">
+          <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
               Rata-rata Nilai
             </p>
@@ -164,7 +165,7 @@ export default function NilaiSiswaDashboardPage() {
             </h3>
           </div>
 
-          <div className="rounded-2xl border border-line bg-surface p-4">
+          <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
               Kuis Dikerjakan
             </p>
@@ -173,7 +174,7 @@ export default function NilaiSiswaDashboardPage() {
             </h3>
           </div>
 
-          <div className="rounded-2xl border border-line bg-surface p-4">
+          <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
               Lulus (&gt;= 75)
             </p>
@@ -183,93 +184,104 @@ export default function NilaiSiswaDashboardPage() {
           </div>
         </div>
 
-        {/* Filter Topik */}
-        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4">
-          <label className="text-xs font-semibold text-secondary">
-            Topik:
-          </label>
-          <select
-            value={selectedTopik}
-            onChange={(event) => setSelectedTopik(event.target.value)}
-            className="rounded-xl border border-line bg-base px-3 py-2 text-xs text-primary focus:border-brand focus:outline-none"
-          >
-            <option value="Semua">Semua Topik</option>
-            {daftarTopik.map((topik, idx) => (
-              <option key={idx} value={topik}>
-                {topik}
-              </option>
-            ))}
-          </select>
+        {/* Baris Filter & Informasi Ringkas */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-semibold text-secondary">
+              Filter Topik:
+            </label>
+            <select
+              value={selectedTopik}
+              onChange={(event) => setSelectedTopik(event.target.value)}
+              className="rounded-xl border border-line bg-base px-3 py-1.5 text-xs font-medium text-primary focus:border-brand focus:outline-none transition-colors"
+            >
+              <option value="Semua">Semua Topik ({riwayatNilai.length})</option>
+              {daftarTopik.map((topik, idx) => (
+                <option key={idx} value={topik}>
+                  {topik}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="text-xs text-secondary font-medium">
+            Menampilkan <span className="font-bold text-primary">{hasilFiltered.length}</span> dari <span className="font-bold text-primary">{riwayatNilai.length}</span> kuis
+          </div>
         </div>
 
-        {/* Tabel Nilai */}
-        <div className="overflow-x-auto rounded-2xl border border-line bg-surface">
+        {/* Card Tabel Nilai dengan Scrollable Wrapper */}
+        <div className="rounded-2xl border border-line bg-surface shadow-sm overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-xs font-semibold text-secondary">
+            <div className="p-12 text-center text-xs font-semibold text-secondary">
               Memuat data nilai dari server...
             </div>
           ) : (
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-line bg-base text-xs uppercase tracking-wider text-secondary">
-                <tr>
-                  <th className="p-4">Topik</th>
-                  <th className="p-4">Kuis</th>
-                  <th className="p-4">Tanggal</th>
-                  <th className="p-4">Nilai</th>
-                  <th className="p-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {hasilFiltered.map((item) => {
-                  let statusBadge = "Lulus";
-                  let badgeStyle = "border border-brand/30 bg-brand/10 text-brand";
+            /* Pembatas tinggi maksimal agar tabel tidak terlalu panjang ke bawah */
+            <div className="max-h-105 overflow-y-auto overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="sticky top-0 z-10 border-b border-line bg-base text-xs uppercase tracking-wider text-secondary font-bold shadow-xs">
+                  <tr>
+                    <th className="px-5 py-3.5">Topik</th>
+                    <th className="px-5 py-3.5">Kuis</th>
+                    <th className="px-5 py-3.5">Tanggal</th>
+                    <th className="px-5 py-3.5">Nilai</th>
+                    <th className="px-5 py-3.5">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line/60">
+                  {hasilFiltered.map((item) => {
+                    let statusBadge = "Lulus";
+                    let badgeStyle = "border border-brand/30 bg-brand/10 text-brand";
 
-                  if (item.isSubmitted) {
-                    statusBadge = "⏳ Menunggu Evaluasi Guru";
-                    badgeStyle = "border border-amber-500/30 bg-amber-500/10 text-amber-500";
-                  } else if (item.nilai < 75) {
-                    statusBadge = "Remedial";
-                    badgeStyle = "border border-av-red/30 bg-av-red/10 text-av-red";
-                  }
+                    if (item.isSubmitted) {
+                      statusBadge = "⏳ Menunggu Evaluasi Guru";
+                      badgeStyle = "border border-amber-500/30 bg-amber-500/10 text-amber-500";
+                    } else if (item.nilai < 75) {
+                      statusBadge = "Remedial";
+                      badgeStyle = "border border-av-red/30 bg-av-red/10 text-av-red";
+                    }
 
-                  return (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-base/40 transition-colors"
-                    >
-                      <td className="p-4 text-secondary">{item.topik}</td>
-                      <td className="p-4 font-semibold text-primary">
-                        {item.judul}
-                      </td>
-                      <td className="p-4 text-xs text-secondary">
-                        {item.tanggal}
-                      </td>
-                      <td className="p-4 font-extrabold text-brand">
-                        {item.isSubmitted ? "-" : item.nilai}
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${badgeStyle}`}
-                        >
-                          {statusBadge}
-                        </span>
+                    return (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-base/40 transition-colors"
+                      >
+                        <td className="px-5 py-3.5 font-medium text-secondary text-xs">
+                          {item.topik}
+                        </td>
+                        <td className="px-5 py-3.5 font-bold text-primary">
+                          {item.judul}
+                        </td>
+                        <td className="px-5 py-3.5 text-xs text-secondary font-mono">
+                          {item.tanggal}
+                        </td>
+                        <td className="px-5 py-3.5 font-extrabold text-brand">
+                          {item.isSubmitted ? "-" : item.nilai}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold ${badgeStyle}`}
+                          >
+                            {statusBadge}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {hasilFiltered.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="p-12 text-center text-xs text-secondary font-medium"
+                      >
+                        Belum ada data nilai kuis yang dikerjakan.
                       </td>
                     </tr>
-                  );
-                })}
-
-                {hasilFiltered.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="p-8 text-center text-xs text-secondary"
-                    >
-                      Belum ada data nilai kuis yang dikerjakan.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
