@@ -17,11 +17,6 @@ const navItems = [
     icon: "📚",
   },
   {
-    href: "/dashboard/siswa/latihan-soal",
-    label: "Latihan Soal",
-    icon: "✏️",
-  },
-  {
     href: "/dashboard/siswa/kuis",
     label: "Kuis",
     icon: "⏰",
