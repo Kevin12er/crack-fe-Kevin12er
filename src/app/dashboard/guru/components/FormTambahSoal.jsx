@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
@@ -8,7 +8,9 @@ import { fetchApi } from "@/lib/api";
 export default function FormTambahSoal({ onTambahSoal }) {
   const [tipeSoal, setTipeSoal] = useState("pg");
   const [courses, setCourses] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [selectedQuizId, setSelectedQuizId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -27,84 +29,69 @@ export default function FormTambahSoal({ onTambahSoal }) {
     },
   });
 
-  // Fetch daftar Course dari backend /courses
-  const fetchCoursesAndQuizzes = async () => {
-    try {
-      const data = await fetchApi("/courses");
-      const list = Array.isArray(data) ? data : [];
-      setCourses(list);
-
-      if (list.length > 0) {
-        setSelectedCourseId(list[0].id);
-      }
-    } catch (err) {
-      console.warn("Gagal memuat daftar course:", err);
-    }
-  };
-
+  // Ambil course & quiz sekali saat mount
   useEffect(() => {
-    fetchCoursesAndQuizzes();
+    const loadData = async () => {
+      try {
+        const [courseData, quizData] = await Promise.all([
+          fetchApi("/courses").catch(() => []),
+          fetchApi("/quizzes").catch(() => []),
+        ]);
+
+        const courseList = Array.isArray(courseData) ? courseData : [];
+        const quizList = Array.isArray(quizData) ? quizData : [];
+
+        setCourses(courseList);
+        setQuizzes(quizList);
+
+        if (courseList.length > 0) {
+          setSelectedCourseId(courseList[0].id);
+        }
+      } catch (err) {
+        console.warn("Gagal memuat data course/kuis:", err);
+      }
+    };
+
+    loadData();
   }, []);
 
-  // Handler Submit Form ke Backend NestJS
+  // Quiz yang tampil hanya milik course terpilih
+  const filteredQuizzes = useMemo(
+    () =>
+      quizzes.filter(
+        (q) =>
+          String(q.courseId) === String(selectedCourseId) ||
+          String(q.course?.id) === String(selectedCourseId)
+      ),
+    [quizzes, selectedCourseId]
+  );
+
+  // Saat course berubah, otomatis pilih quiz pertama milik course itu
+  // (kalau hanya ada satu quiz, guru tidak perlu memilih manual)
+  useEffect(() => {
+    setSelectedQuizId(filteredQuizzes[0]?.id || "");
+  }, [filteredQuizzes]);
+
   const onSubmit = async (data) => {
+    if (!selectedQuizId) {
+      alert("Pilih kuis terlebih dahulu. Buat kuis di menu Kelola Soal jika belum ada.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
-      let targetQuizId = null;
-
-      // 1. Ambil kuis yang sudah ada untuk mencari kuis dengan courseId terpilih
-      try {
-        const existingQuizzes = await fetchApi("/quizzes");
-        const quizList = Array.isArray(existingQuizzes) ? existingQuizzes : [];
-
-        const matchedQuiz = quizList.find(
-          (q) => String(q.courseId) === String(selectedCourseId) || String(q.course?.id) === String(selectedCourseId)
-        );
-
-        if (matchedQuiz?.id) {
-          targetQuizId = matchedQuiz.id;
-        }
-      } catch (qErr) {
-        console.warn("Gagal fetch quizzes:", qErr);
-      }
-
-      // 2. Jika kuis untuk Course ini belum ada, buatkan Quiz baru secara otomatis
-      if (!targetQuizId) {
-        const selectedCourseObj = courses.find((c) => String(c.id) === String(selectedCourseId));
-        const courseName = selectedCourseObj?.name || selectedCourseObj?.title || "Matematika SMK";
-
-        const newQuiz = await fetchApi("/quizzes", {
-          method: "POST",
-          body: JSON.stringify({
-            title: `Bank Soal Evaluasi - ${courseName}`,
-            description: `Kuis evaluasi modul ${courseName}`,
-            courseId: selectedCourseId,
-          }),
-        });
-
-        if (newQuiz?.id) {
-          targetQuizId = newQuiz.id;
-        }
-      }
-
-      if (!targetQuizId) {
-        throw new Error("Gagal menghubungkan soal ke kuis.");
-      }
-
-      // 3. Simpan Pertanyaan ke POST /quiz-questions
-      const questionPayload = {
-        quizId: targetQuizId,
-        question: data.pertanyaan,
-        type: tipeSoal === "pg" ? "MULTIPLE_CHOICE" : "ESSAY",
-      };
-
+      // 1. Simpan pertanyaan ke quiz yang dipilih secara eksplisit
       const newQuestion = await fetchApi("/quiz-questions", {
         method: "POST",
-        body: JSON.stringify(questionPayload),
+        body: JSON.stringify({
+          quizId: selectedQuizId,
+          question: data.pertanyaan,
+          type: tipeSoal === "pg" ? "MULTIPLE_CHOICE" : "ESSAY",
+        }),
       });
 
-      // 4. Jika Pilihan Ganda, Simpan Opsi Jawaban ke POST /quiz-options
+      // 2. Jika pilihan ganda, simpan opsi jawaban
       if (tipeSoal === "pg" && newQuestion?.id) {
         const optionsPayload = [
           { text: data.opsiA, isCorrect: data.kunciJawaban === "A" },
@@ -137,8 +124,8 @@ export default function FormTambahSoal({ onTambahSoal }) {
         });
       }
 
+      // Reset hanya isi form; pilihan course & kuis dipertahankan
       reset();
-      await fetchCoursesAndQuizzes();
     } catch (err) {
       alert("Gagal menyimpan soal: " + (err.message || "Terjadi kesalahan server."));
     } finally {
@@ -182,7 +169,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Pilih Course / Modul Terkait */}
+        {/* Pilih Course */}
         <div>
           <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
             Pilih Course / Modul
@@ -195,13 +182,37 @@ export default function FormTambahSoal({ onTambahSoal }) {
             >
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name || c.title || "Modul Matematika"}
+                  {c.title || c.name || "Modul Matematika"}
                 </option>
               ))}
             </select>
           ) : (
             <div className="rounded-xl border border-line bg-base p-3 text-xs text-secondary">
               Belum ada Course. Buat Course baru di menu Materi terlebih dahulu.
+            </div>
+          )}
+        </div>
+
+        {/* Pilih Kuis (eksplisit) */}
+        <div>
+          <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+            Pilih Kuis
+          </label>
+          {filteredQuizzes.length > 0 ? (
+            <select
+              value={selectedQuizId}
+              onChange={(e) => setSelectedQuizId(e.target.value)}
+              className="w-full rounded-xl border border-line bg-base p-3 text-xs text-primary focus:border-brand focus:outline-none"
+            >
+              {filteredQuizzes.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.title}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="rounded-xl border border-line bg-base p-3 text-xs text-secondary">
+              Belum ada kuis untuk course ini. Buat kuis terlebih dahulu di menu Kelola Soal.
             </div>
           )}
         </div>
@@ -259,14 +270,13 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
         <button
           type="submit"
-          disabled={isSubmitting || courses.length === 0}
+          disabled={isSubmitting || courses.length === 0 || !selectedQuizId}
           className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover disabled:opacity-50"
         >
           {isSubmitting ? "Menyimpan Soal..." : "Simpan Soal"}
         </button>
       </form>
 
-      {/* Link ke Kelola Soal */}
       <Link
         href="/dashboard/guru/kelola-soal"
         className="text-xs mt-4 font-semibold w-fit font-jakarta text-brand hover:underline flex items-center gap-1 bg-brand-soft border border-brand-ring px-3 py-1.5 rounded-lg transition-colors"

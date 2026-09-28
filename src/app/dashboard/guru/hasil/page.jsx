@@ -1,3 +1,4 @@
+// src/app/dashboard/guru/hasil/page.jsx
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -10,7 +11,6 @@ export default function HasilUjianGuruPage() {
   const [dataHasil, setDataHasil] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // State untuk Modal Detail Jawaban Essay / Pilihan Ganda
   const [selectedAttemptId, setSelectedAttemptId] = useState(null);
   const [detailAnswers, setDetailAnswers] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -19,44 +19,42 @@ export default function HasilUjianGuruPage() {
     try {
       setLoading(true);
 
-      const [results, attempts] = await Promise.all([
-        fetchApi("/results").catch(() => []),
-        fetchApi("/quiz-attempts").catch(() => []),
-      ]);
-
-      const resultsList = Array.isArray(results) ? results : [];
-      const attemptsList = Array.isArray(attempts) ? attempts : [];
-
-      // Pakai penggabungan sederhana bawaan kode kamu sebelumnya
-      const rawAllData = [...resultsList, ...attemptsList];
+      // Satu sumber data saja (/results) supaya tidak duplikat
+      const results = await fetchApi("/results").catch(() => []);
+      const rawAllData = Array.isArray(results) ? results : [];
 
       const formatted = rawAllData.map((res, idx) => {
         const studentObj = res.student || res.user;
         const namaSiswa =
           studentObj?.name || res.studentName || res.userName || "Siswa";
 
+        // Course di schema memakai `title`
         const namaMapel =
-          res.course?.name ||
+          res.quiz?.course?.title ||
           res.quiz?.course?.name ||
+          res.course?.title ||
+          res.course?.name ||
           "Matematika SMK";
 
         const judulKuis =
-          res.quiz?.title ||
-          res.quizTitle ||
-          res.title ||
-          "Bank Soal Evaluasi";
+          res.quiz?.title || res.quizTitle || res.title || "Bank Soal Evaluasi";
 
-        const rawScore = res.score ?? res.nilai ?? res.scoreObtained;
-        const rawDate = res.createdAt || res.updatedAt || res.submittedAt;
+        const rawScore = res.score ?? res.nilai ?? res.scoreObtained ?? null;
+
+        const rawDate =
+          res.attempt?.submittedAt ||
+          res.createdAt ||
+          res.updatedAt ||
+          res.submittedAt;
         const tanggal = rawDate
           ? new Date(rawDate).toISOString().split("T")[0]
           : "-";
 
-        const validAttemptId = res.quizAttemptId || res.attemptId || res.id;
-        const numericScore = typeof rawScore === "number" ? Math.round(rawScore) : 0;
+        // Pakai attemptId, bukan res.id (itu id Result)
+        const validAttemptId =
+          res.attemptId || res.quizAttemptId || res.attempt?.id;
 
-        // STATUS: Cek status dari backend (SUBMITTED) atau score null
-        const isSubmitted =
+        const needsEvaluation =
           res.status === "SUBMITTED" ||
           res.attempt?.status === "SUBMITTED" ||
           rawScore === null ||
@@ -67,11 +65,11 @@ export default function HasilUjianGuruPage() {
           attemptId: validAttemptId,
           nama: namaSiswa,
           mapel: namaMapel,
-          judulKuis: judulKuis,
-          tanggal: tanggal,
-          nilai: numericScore,
-          // Butuh evaluasi jika statusnya SUBMITTED atau skornya belum ada/null
-          needsEvaluation: isSubmitted,
+          judulKuis,
+          tanggal,
+          // null tetap null, jangan dipaksa jadi 0
+          nilai: typeof rawScore === "number" ? Math.round(rawScore) : null,
+          needsEvaluation,
         };
       });
 
@@ -103,7 +101,9 @@ export default function HasilUjianGuruPage() {
       setDetailAnswers(res);
     } catch (err) {
       console.error("[ERROR DETAIL JAWABAN]:", err);
-      alert(`Gagal memuat detail jawaban: ${err.message || "Endpoint tidak merespon"}`);
+      alert(
+        `Gagal memuat detail jawaban: ${err.message || "Endpoint tidak merespon"}`
+      );
     } finally {
       setLoadingDetail(false);
     }
@@ -113,13 +113,14 @@ export default function HasilUjianGuruPage() {
     const matchNama = item.nama
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchMapel =
-      selectedMapel === "Semua" || item.mapel === selectedMapel;
+    const matchMapel = selectedMapel === "Semua" || item.mapel === selectedMapel;
     return matchNama && matchMapel;
   });
 
   const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
-  const lulus = dataHasil.filter((s) => !s.needsEvaluation && s.nilai >= 75).length;
+  const lulus = dataHasil.filter(
+    (s) => !s.needsEvaluation && s.nilai >= 75
+  ).length;
   const perluEvaluasi = dataHasil.filter((s) => s.needsEvaluation).length;
 
   const daftarOptionMapel = [
@@ -130,7 +131,6 @@ export default function HasilUjianGuruPage() {
   return (
     <div className="p-4 md:p-8 font-jakarta">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Navigasi Kembali */}
         <div>
           <Link
             href="/dashboard/guru"
@@ -140,7 +140,6 @@ export default function HasilUjianGuruPage() {
           </Link>
         </div>
 
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-primary">
@@ -160,7 +159,6 @@ export default function HasilUjianGuruPage() {
           </button>
         </div>
 
-        {/* Stat Cards Ringkasan */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-surface border border-line p-4 rounded-2xl">
             <span className="text-xs font-semibold text-secondary uppercase tracking-wider">
@@ -188,7 +186,6 @@ export default function HasilUjianGuruPage() {
           </div>
         </div>
 
-        {/* Search & Filter */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between bg-surface p-4 rounded-2xl border border-line">
           <input
             type="text"
@@ -213,7 +210,6 @@ export default function HasilUjianGuruPage() {
           </div>
         </div>
 
-        {/* Tabel Detail */}
         <div className="bg-surface border border-line rounded-2xl overflow-hidden">
           <div className="overflow-x-auto max-h-112.5 overflow-y-auto">
             <table className="w-full text-left text-sm">
@@ -231,7 +227,10 @@ export default function HasilUjianGuruPage() {
               <tbody className="divide-y divide-line">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="text-center p-8 text-xs text-secondary">
+                    <td
+                      colSpan={7}
+                      className="text-center p-8 text-xs text-secondary"
+                    >
                       Memuat data rekap hasil...
                     </td>
                   </tr>
@@ -247,8 +246,7 @@ export default function HasilUjianGuruPage() {
                       <td className="p-4 text-secondary">{item.mapel}</td>
                       <td className="p-4 text-secondary">{item.judulKuis}</td>
                       <td className="p-4 text-xs text-muted">{item.tanggal}</td>
-                      
-                      {/* Kolom Nilai */}
+
                       <td className="p-4 font-bold text-brand">
                         {item.needsEvaluation ? (
                           <span className="text-xs text-amber-500 font-semibold">
@@ -259,7 +257,6 @@ export default function HasilUjianGuruPage() {
                         )}
                       </td>
 
-                      {/* Kolom Status */}
                       <td className="p-4">
                         {item.needsEvaluation ? (
                           <span className="text-[10px] font-bold px-2.5 py-1 rounded-md border bg-amber-500/10 text-amber-500 border-amber-500/30">
@@ -302,14 +299,11 @@ export default function HasilUjianGuruPage() {
         </div>
       </div>
 
-      {/* Modal Popup Detail Jawaban Essay / Pilihan Ganda */}
       {selectedAttemptId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl rounded-3xl border border-line bg-surface p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line pb-3">
-              <h2 className="font-bold text-primary">
-                Evaluasi Jawaban Siswa
-              </h2>
+              <h2 className="font-bold text-primary">Evaluasi Jawaban Siswa</h2>
               <button
                 onClick={() => setSelectedAttemptId(null)}
                 className="rounded-lg bg-base px-2.5 py-1 text-xs font-bold text-secondary hover:text-primary cursor-pointer"
@@ -325,7 +319,10 @@ export default function HasilUjianGuruPage() {
             ) : detailAnswers && detailAnswers.answers ? (
               <div className="space-y-4">
                 <div className="text-xs text-secondary">
-                  Kuis: <strong className="text-primary">{detailAnswers.quiz?.title}</strong>
+                  Kuis:{" "}
+                  <strong className="text-primary">
+                    {detailAnswers.quiz?.title}
+                  </strong>
                 </div>
 
                 {detailAnswers.answers.map((ans, idx) => (
@@ -348,7 +345,8 @@ export default function HasilUjianGuruPage() {
                           Jawaban Essay Teks Siswa:
                         </p>
                         <p className="text-xs font-medium text-primary whitespace-pre-wrap">
-                          {ans.answerText || "(Siswa tidak menginputkan jawaban teks)"}
+                          {ans.answerText ||
+                            "(Siswa tidak menginputkan jawaban teks)"}
                         </p>
                       </div>
                     ) : (

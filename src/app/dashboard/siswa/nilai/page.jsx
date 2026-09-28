@@ -31,9 +31,8 @@ export default function NilaiSiswaDashboardPage() {
       const rawAttempts = Array.isArray(attemptsData) ? attemptsData : [];
       const quizList = Array.isArray(quizzesData) ? quizzesData : [];
 
-      // 2. Map dari riwayat pengerjaan (Attempt) yang nyata di database
+      // 2. Map dari riwayat pengerjaan (Attempt)
       const formattedData = rawAttempts.map((attempt) => {
-        // Cari info quiz pendukung jika ada
         const relatedQuiz = quizList.find(
           (q) => String(q.id) === String(attempt.quizId || attempt.quiz?.id)
         );
@@ -47,10 +46,15 @@ export default function NilaiSiswaDashboardPage() {
           relatedQuiz?.course?.name ||
           "Matematika SMK";
 
-        const attemptStatus = attempt.status || "GRADED";
-        const isSubmitted = attemptStatus === "SUBMITTED";
-
+        // ✅ PERBAIKAN CEK STATUS & SCORE NULL:
         const rawScore = attempt.score ?? attempt.result?.score;
+        const currentStatus =
+          attempt.status || attempt.result?.status || (rawScore === null ? "SUBMITTED" : "GRADED");
+
+        // Dianggap submitted/perlu evaluasi jika statusnya SUBMITTED atau nilainya masih NULL/undefined
+        const isSubmitted =
+          currentStatus === "SUBMITTED" || rawScore === null || rawScore === undefined;
+
         const score =
           typeof rawScore === "number" ? Math.round(rawScore) : 0;
 
@@ -65,7 +69,7 @@ export default function NilaiSiswaDashboardPage() {
           topik: topikName,
           judul: quizTitle,
           nilai: score,
-          statusAttempt: attemptStatus,
+          statusAttempt: currentStatus,
           isSubmitted: isSubmitted,
           tanggal: formattedDate,
         };

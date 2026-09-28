@@ -34,18 +34,24 @@ export default function KerjakanKuisPage({ params }) {
       setIsSubmitting(true);
 
       const formattedAnswers = questions.map((q) => {
-        const isEssay = q.type === "ESSAY" || !q.options || q.options.length === 0;
+        const qTypeUpper = String(q.type || "").toUpperCase();
+        const hasNoOptions = !q.options || q.options.length === 0;
+        
+        // Cek secara presisi apakah soal ini ESSAY
+        const isEssay = qTypeUpper === "ESSAY" || hasNoOptions;
         const userAnswer = answersRef.current[q.id] || "";
 
         if (isEssay) {
           return {
             questionId: q.id,
-            answerText: userAnswer,
+            answerText: typeof userAnswer === "string" ? userAnswer : String(userAnswer),
+            selectedOptionId: null,
           };
         } else {
           return {
             questionId: q.id,
-            selectedOptionId: userAnswer,
+            selectedOptionId: typeof userAnswer === "string" ? userAnswer : null,
+            answerText: null,
           };
         }
       });
@@ -55,13 +61,17 @@ export default function KerjakanKuisPage({ params }) {
         answers: formattedAnswers,
       };
 
+      // Send payload ke NestJS API
       const res = await fetchApi("/quiz-attempts", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
-      const rawScore = res?.score ?? 0;
-      const finalScore = Math.round(Number(rawScore));
+      // FIX: Jika status dari backend SUBMITTED atau score-nya null, set score ke null (jangan di-fallback ke 0 / angka)
+      const rawScore = res?.score;
+      const isSubmittedStatus = res?.status === "SUBMITTED" || rawScore === null || rawScore === undefined;
+      
+      const finalScore = isSubmittedStatus ? null : Math.round(Number(rawScore));
 
       setScore(finalScore);
       setSubmitted(true);
