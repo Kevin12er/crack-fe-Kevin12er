@@ -1,9 +1,14 @@
+// src/app/dashboard/guru/components/TabelHasilSiswa.jsx
 "use client";
 import Link from "next/link";
 
 export default function TabelHasilSiswa({ dataHasil = [] }) {
-  // Hitung jumlah unik siswa
-  const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
+  // Hitung jumlah unik siswa dengan perlindungan nama undefined/null
+  const jumlahSiswaUnik = new Set(
+    dataHasil
+      .map((item) => item.nama || item.studentName || item.userName)
+      .filter(Boolean)
+  ).size;
 
   return (
     <div className="rounded-2xl border border-line bg-surface font-jakarta overflow-hidden">
@@ -41,24 +46,39 @@ export default function TabelHasilSiswa({ dataHasil = [] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {dataHasil.map((item) => {
-              const needsEval =
-                item.needsEvaluation ||
-                item.statusAttempt === "SUBMITTED" ||
-                item.status === "SUBMITTED" ||
-                item.nilai === null ||
-                item.nilai === undefined;
+            {dataHasil.map((item, idx) => {
+              // Ambil raw score dari berbagai kemungkinan field
+              const rawScore =
+                item.nilai ?? item.score ?? item.rawScore ?? null;
 
-              const isPassed = Number(item.nilai) >= 75;
+              // Logika presisi pemicu PERLU EVALUASI
+              const needsEval =
+                item.needsEvaluation === true ||
+                item.status === "SUBMITTED" ||
+                item.statusAttempt === "SUBMITTED" ||
+                item.attemptStatus === "SUBMITTED" ||
+                item.attempt?.status === "SUBMITTED" ||
+                rawScore === null ||
+                rawScore === undefined;
+
+              const numericScore =
+                typeof rawScore === "number" ? Math.round(rawScore) : null;
+              const isPassed = numericScore !== null && numericScore >= 75;
 
               return (
                 <tr
-                  key={item.id}
+                  key={item.id || item.attemptId || idx}
                   className="transition-colors hover:bg-base/50"
                 >
-                  <td className="p-4 font-semibold text-primary">{item.nama}</td>
-                  <td className="p-4 text-secondary">{item.mapel}</td>
-                  <td className="p-4 text-secondary">{item.judulKuis}</td>
+                  <td className="p-4 font-semibold text-primary">
+                    {item.nama || "Siswa"}
+                  </td>
+                  <td className="p-4 text-secondary">
+                    {item.mapel || "Mata Pelajaran"}
+                  </td>
+                  <td className="p-4 text-secondary">
+                    {item.judulKuis || "Kuis"}
+                  </td>
 
                   {/* Kolom Nilai */}
                   <td className="p-4 font-bold text-brand">
@@ -66,10 +86,8 @@ export default function TabelHasilSiswa({ dataHasil = [] }) {
                       <span className="text-xs font-semibold text-amber-500">
                         Pending
                       </span>
-                    ) : typeof item.nilai === "number" ? (
-                      Math.round(item.nilai)
                     ) : (
-                      item.nilai ?? 0
+                      numericScore ?? "-"
                     )}
                   </td>
 

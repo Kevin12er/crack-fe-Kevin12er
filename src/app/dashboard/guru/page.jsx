@@ -59,48 +59,64 @@ export default function DashboardGuruPage() {
     }
   }, []);
 
-  // Fungsi mengambil rekap hasil ujian siswa
+  // 2. Fungsi mengambil rekap hasil ujian siswa (Diselaraskan persis dengan guru/hasil/page.jsx)
   const loadResults = useCallback(async () => {
     try {
       setLoadingHasil(true);
 
-      const [results, attempts] = await Promise.all([
-        fetchApi("/results").catch(() => []),
-        fetchApi("/quiz-attempts").catch(() => []),
-      ]);
+      // Gunakan satu sumber data utuh (/results) agar tidak terjadi data duplikat atau racikan status ganda
+      const results = await fetchApi("/results").catch(() => []);
+      const rawAllData = Array.isArray(results) ? results : [];
 
-      const resultsList = Array.isArray(results) ? results : [];
-      const attemptsList = Array.isArray(attempts) ? attempts : [];
-
-      // 1. Definisikan rawAllData terlebih dahulu
-      const rawAllData = [...resultsList, ...attemptsList];
-
-      // 2. Format data menggunakan rawAllData yang sudah didefinisikan
       const formattedResults = rawAllData.map((res, idx) => {
         const studentObj = res.student || res.user;
-        const namaSiswa = studentObj?.name || res.studentName || res.userName || "Siswa";
+        const namaSiswa =
+          studentObj?.name || res.studentName || res.userName || "Siswa";
 
-        // Mata Pelajaran / Course (Contoh: "Matematika SMK")
+        // Course / Mata Pelajaran
         const namaMapel =
-          res.course?.name ||
+          res.quiz?.course?.title ||
           res.quiz?.course?.name ||
+          res.course?.title ||
+          res.course?.name ||
           "Matematika SMK";
 
-        // Nama Kuis / Evaluasi (Contoh: "Bank Soal Evaluasi - Aljabar Dasar")
+        // Judul Kuis
         const judulKuis =
-          res.quiz?.title ||
-          res.quizTitle ||
-          res.title ||
-          "Bank Soal Evaluasi";
+          res.quiz?.title || res.quizTitle || res.title || "Bank Soal Evaluasi";
 
-        const rawScore = res.score ?? res.nilai ?? res.scoreObtained ?? 0;
+        // AMBIL SCORE ASLI: null JANGAN di-fallback ke 0!
+        const rawScore =
+          res.score ?? res.nilai ?? res.scoreObtained ?? res.attempt?.score ?? null;
+
+        // Cek status pengerjaan dari attempt
+        const statusAttempt =
+          res.status || res.attempt?.status || res.statusAttempt;
+
+        // Pemicu presisi status PERLU EVALUASI
+        const needsEvaluation =
+          statusAttempt === "SUBMITTED" ||
+          res.attempt?.status === "SUBMITTED" ||
+          rawScore === null ||
+          rawScore === undefined;
+
+        const validAttemptId =
+          res.attemptId || res.quizAttemptId || res.attempt?.id;
 
         return {
           id: res.id || idx + 1,
+          attemptId: validAttemptId,
           nama: namaSiswa,
           mapel: namaMapel,
           judulKuis: judulKuis,
-          nilai: typeof rawScore === "number" ? Math.round(rawScore) : 0,
+          // Jika butuh evaluasi, nilai WAJIB null. Jika sudah dinilai, baru di-round.
+          nilai: needsEvaluation
+            ? null
+            : typeof rawScore === "number"
+            ? Math.round(rawScore)
+            : null,
+          statusAttempt: statusAttempt,
+          needsEvaluation: needsEvaluation,
         };
       });
 
@@ -139,6 +155,18 @@ export default function DashboardGuruPage() {
 
   // Hitung jumlah siswa UNIK untuk kartu statistik
   const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
+
+  // Rata-rata nilai (HANYA menghitung siswa yang SUDAH dinilai/bukan null)
+  const dataSudahDinilai = dataHasil.filter(
+    (item) => !item.needsEvaluation && typeof item.nilai === "number"
+  );
+  const rataRataNilai =
+    dataSudahDinilai.length > 0
+      ? Math.round(
+          dataSudahDinilai.reduce((acc, curr) => acc + curr.nilai, 0) /
+            dataSudahDinilai.length
+        )
+      : 0;
 
   return (
     <>
@@ -185,14 +213,7 @@ export default function DashboardGuruPage() {
                 Rata-rata Nilai
               </p>
               <h3 className="mt-1 text-2xl font-bold text-av-amber">
-                {loadingHasil
-                  ? "..."
-                  : dataHasil.length > 0
-                  ? Math.round(
-                      dataHasil.reduce((acc, curr) => acc + curr.nilai, 0) /
-                        dataHasil.length
-                    )
-                  : 0}
+                {loadingHasil ? "..." : rataRataNilai}
               </h3>
             </div>
           </div>
