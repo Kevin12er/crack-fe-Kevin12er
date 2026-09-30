@@ -122,7 +122,7 @@ src
 - `npm run lint` - Jalankan linter
 
 ## Live URL LearnBridge
-[LearnBridge Website](https://crack-fe-kevin12er.vercel.app/)
+[www.learnbridge.fun](www.learnbridge.fun)
 
 
 ## Screenshot
