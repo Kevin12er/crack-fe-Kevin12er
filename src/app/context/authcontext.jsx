@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { fetchApi } from "@/lib/api";
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = "learnbridge-auth";
@@ -58,16 +59,25 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const updateProfile = ({ name }) => {
-    setUser((currentUser) => {
-      if (!currentUser) return currentUser;
+  const updateProfile = async ({ name }) => {
+  const updatedUser = await fetchApi("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify({
+      name: name?.trim(),
+    }),
+  });
 
-      return {
-        ...currentUser,
-        name: name?.trim() || currentUser.name,
-      };
-    });
-  };
+  setUser((currentUser) => {
+    if (!currentUser) return currentUser;
+
+    return {
+      ...currentUser,
+      ...updatedUser,
+    };
+  });
+
+  return updatedUser;
+};
 
   const value = useMemo(
     () => ({

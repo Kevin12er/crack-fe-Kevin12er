@@ -8,24 +8,26 @@ import { useAuth } from "@/app/context/authcontext";
 
 export default function PengaturanPage() {
   const router = useRouter();
-  const { user, isAuthenticated, updateProfile, logout } = useAuth();
+  const { user, isAuthenticated, isHydrated, updateProfile, logout, } = useAuth();
   const [nama, setNama] = useState("");
   const [notifikasiBelajar, setNotifikasiBelajar] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/login");
-      return;
-    }
-
-    if (user?.name) {
-      setNama(user.name);
-    }
-  }, [isAuthenticated, user, router]);
+  if (!isHydrated) return;
 
   if (!isAuthenticated) {
-    return null;
+    router.replace("/login");
+    return;
+  }
+
+  if (user?.name) {
+    setNama(user.name);
+  }
+  }, [isHydrated, isAuthenticated, user, router]);
+
+  if (!isHydrated || !isAuthenticated) {
+      return null;
   }
 
   const dashboardHref =
