@@ -8,35 +8,49 @@ import { useAuth } from "@/app/context/authcontext";
 
 export default function PengaturanPage() {
   const router = useRouter();
-  const { user, isAuthenticated, isHydrated, updateProfile, logout, } = useAuth();
+  const { user, isAuthenticated, isHydrated, updateProfile, logout } =
+    useAuth();
   const [nama, setNama] = useState("");
+  const [email, setEmail] = useState("");
   const [notifikasiBelajar, setNotifikasiBelajar] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
 
   useEffect(() => {
-  if (!isHydrated) return;
+    if (!isHydrated) return;
 
-  if (!isAuthenticated) {
-    router.replace("/login");
-    return;
-  }
+    if (!isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
 
-  if (user?.name) {
-    setNama(user.name);
-  }
+    if (user?.name) {
+      setNama(user.name);
+    }
+    if (user?.email) {
+      setEmail(user.email);
+    }
   }, [isHydrated, isAuthenticated, user, router]);
 
   if (!isHydrated || !isAuthenticated) {
-      return null;
+    return null;
   }
 
   const dashboardHref =
     user?.role === "guru" ? "/dashboard/guru" : "/dashboard/siswa";
 
-  const handleSaveProfile = (event) => {
+  const handleSaveProfile = async (event) => {
     event.preventDefault();
-    updateProfile({ name: nama });
-    alert("Profil berhasil diperbarui.");
+
+    try {
+      await updateProfile({
+        name: nama,
+        email: email,
+      });
+
+      alert("Profil berhasil diperbarui.");
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   const handleLogout = () => {
@@ -93,10 +107,12 @@ export default function PengaturanPage() {
                   Email
                 </label>
                 <input
-                  value={user?.email || "-"}
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   type="email"
-                  disabled
-                  className="w-full cursor-not-allowed rounded-xl border border-line bg-base p-3 text-sm text-secondary"
+                  className="w-full rounded-xl border border-line bg-base p-3 text-sm text-primary placeholder:text-muted focus:border-brand focus:outline-none"
+                  placeholder="Masukkan email kamu"
+                  required
                 />
               </div>
 

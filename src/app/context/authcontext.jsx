@@ -59,25 +59,26 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const updateProfile = async ({ name }) => {
-  const updatedUser = await fetchApi("/users/me", {
-    method: "PATCH",
-    body: JSON.stringify({
-      name: name?.trim(),
-    }),
-  });
+  const updateProfile = async ({ name, email }) => {
+    const updatedUser = await fetchApi("/users/me", {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: name?.trim(),
+        email: email?.trim(),
+      }),
+    });
 
-  setUser((currentUser) => {
-    if (!currentUser) return currentUser;
+    setUser((currentUser) => {
+      if (!currentUser) return currentUser;
 
-    return {
-      ...currentUser,
-      ...updatedUser,
-    };
-  });
+      return {
+        ...currentUser,
+        ...updatedUser,
+      };
+    });
 
-  return updatedUser;
-};
+    return updatedUser;
+  };
 
   const value = useMemo(
     () => ({
