@@ -5,10 +5,12 @@ import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 
-export default function FormTambahSoal({ onTambahSoal }) {
+export default function FormTambahSoal({
+  onTambahSoal,
+  quizzes = [],
+}) {
   const [tipeSoal, setTipeSoal] = useState("pg");
   const [courses, setCourses] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [selectedQuizId, setSelectedQuizId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,30 +31,26 @@ export default function FormTambahSoal({ onTambahSoal }) {
     },
   });
 
-  // Ambil course & quiz sekali saat mount
+  // Ambil course sekali saat mount.
+  // Daftar quiz sekarang dikirim dari DashboardGuru sebagai props.
   useEffect(() => {
-    const loadData = async () => {
+    const loadCourses = async () => {
       try {
-        const [courseData, quizData] = await Promise.all([
-          fetchApi("/courses").catch(() => []),
-          fetchApi("/quizzes").catch(() => []),
-        ]);
+        const courseData = await fetchApi("/courses").catch(() => []);
 
         const courseList = Array.isArray(courseData) ? courseData : [];
-        const quizList = Array.isArray(quizData) ? quizData : [];
 
         setCourses(courseList);
-        setQuizzes(quizList);
 
         if (courseList.length > 0) {
           setSelectedCourseId(courseList[0].id);
         }
       } catch (err) {
-        console.warn("Gagal memuat data course/kuis:", err);
+        console.warn("Gagal memuat data course:", err);
       }
     };
 
-    loadData();
+    loadCourses();
   }, []);
 
   // Quiz yang tampil hanya milik course terpilih
@@ -61,9 +59,9 @@ export default function FormTambahSoal({ onTambahSoal }) {
       quizzes.filter(
         (q) =>
           String(q.courseId) === String(selectedCourseId) ||
-          String(q.course?.id) === String(selectedCourseId)
+          String(q.course?.id) === String(selectedCourseId),
       ),
-    [quizzes, selectedCourseId]
+    [quizzes, selectedCourseId],
   );
 
   // Saat course berubah, otomatis pilih quiz pertama milik course itu
@@ -74,7 +72,9 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
   const onSubmit = async (data) => {
     if (!selectedQuizId) {
-      alert("Pilih kuis terlebih dahulu. Buat kuis di menu Kelola Soal jika belum ada.");
+      alert(
+        "Pilih kuis terlebih dahulu. Buat kuis di menu Kelola Soal jika belum ada.",
+      );
       return;
     }
 
@@ -94,10 +94,22 @@ export default function FormTambahSoal({ onTambahSoal }) {
       // 2. Jika pilihan ganda, simpan opsi jawaban
       if (tipeSoal === "pg" && newQuestion?.id) {
         const optionsPayload = [
-          { text: data.opsiA, isCorrect: data.kunciJawaban === "A" },
-          { text: data.opsiB, isCorrect: data.kunciJawaban === "B" },
-          { text: data.opsiC, isCorrect: data.kunciJawaban === "C" },
-          { text: data.opsiD, isCorrect: data.kunciJawaban === "D" },
+          {
+            text: data.opsiA,
+            isCorrect: data.kunciJawaban === "A",
+          },
+          {
+            text: data.opsiB,
+            isCorrect: data.kunciJawaban === "B",
+          },
+          {
+            text: data.opsiC,
+            isCorrect: data.kunciJawaban === "C",
+          },
+          {
+            text: data.opsiD,
+            isCorrect: data.kunciJawaban === "D",
+          },
         ];
 
         for (const opt of optionsPayload) {
@@ -127,7 +139,10 @@ export default function FormTambahSoal({ onTambahSoal }) {
       // Reset hanya isi form; pilihan course & kuis dipertahankan
       reset();
     } catch (err) {
-      alert("Gagal menyimpan soal: " + (err.message || "Terjadi kesalahan server."));
+      alert(
+        "Gagal menyimpan soal: " +
+          (err.message || "Terjadi kesalahan server."),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -135,13 +150,16 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
   return (
     <div className="bg-surface border border-line rounded-2xl p-6 font-jakarta">
-      <h2 className="text-lg font-bold text-primary mb-4">Buat Soal Baru</h2>
+      <h2 className="text-lg font-bold text-primary mb-4">
+        Buat Soal Baru
+      </h2>
 
       {/* Switcher Tipe Soal */}
       <div className="mb-4">
         <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
           Tipe Soal
         </label>
+
         <div className="grid grid-cols-2 gap-2 p-1 bg-base border border-line rounded-xl">
           <button
             type="button"
@@ -154,6 +172,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
           >
             Pilihan Ganda
           </button>
+
           <button
             type="button"
             onClick={() => setTipeSoal("essay")}
@@ -174,6 +193,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
           <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
             Pilih Course / Modul
           </label>
+
           {courses.length > 0 ? (
             <select
               value={selectedCourseId}
@@ -188,7 +208,8 @@ export default function FormTambahSoal({ onTambahSoal }) {
             </select>
           ) : (
             <div className="rounded-xl border border-line bg-base p-3 text-xs text-secondary">
-              Belum ada Course. Buat Course baru di menu Materi terlebih dahulu.
+              Belum ada Course. Buat Course baru di menu Materi terlebih
+              dahulu.
             </div>
           )}
         </div>
@@ -198,6 +219,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
           <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
             Pilih Kuis
           </label>
+
           {filteredQuizzes.length > 0 ? (
             <select
               value={selectedQuizId}
@@ -212,7 +234,8 @@ export default function FormTambahSoal({ onTambahSoal }) {
             </select>
           ) : (
             <div className="rounded-xl border border-line bg-base p-3 text-xs text-secondary">
-              Belum ada kuis untuk course ini. Buat kuis terlebih dahulu di menu Kelola Soal.
+              Belum ada kuis untuk course ini. Buat kuis terlebih dahulu di
+              menu Kelola Soal.
             </div>
           )}
         </div>
@@ -221,12 +244,16 @@ export default function FormTambahSoal({ onTambahSoal }) {
           <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
             Pertanyaan / Soal
           </label>
+
           <textarea
             rows={3}
             placeholder="Tuliskan pertanyaan di sini..."
-            {...register("pertanyaan", { required: "Pertanyaan wajib diisi" })}
+            {...register("pertanyaan", {
+              required: "Pertanyaan wajib diisi",
+            })}
             className="w-full rounded-xl border border-line bg-base p-3 text-sm text-primary placeholder:text-muted focus:border-brand focus:outline-none resize-none"
           />
+
           {errors.pertanyaan && (
             <p className="text-xs text-av-red mt-1">
               {errors.pertanyaan.message}
@@ -239,6 +266,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
             <label className="block text-xs font-semibold text-secondary uppercase tracking-wider">
               Opsi Jawaban
             </label>
+
             {["A", "B", "C", "D"].map((opsi) => (
               <input
                 key={opsi}
@@ -255,6 +283,7 @@ export default function FormTambahSoal({ onTambahSoal }) {
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
                 Kunci Jawaban
               </label>
+
               <select
                 {...register("kunciJawaban")}
                 className="w-full rounded-xl border border-line bg-base p-3 text-xs text-primary focus:border-brand focus:outline-none"
@@ -270,7 +299,9 @@ export default function FormTambahSoal({ onTambahSoal }) {
 
         <button
           type="submit"
-          disabled={isSubmitting || courses.length === 0 || !selectedQuizId}
+          disabled={
+            isSubmitting || courses.length === 0 || !selectedQuizId
+          }
           className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover disabled:opacity-50"
         >
           {isSubmitting ? "Menyimpan Soal..." : "Simpan Soal"}

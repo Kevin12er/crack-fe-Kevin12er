@@ -3,7 +3,7 @@
 import Navbar from "@/app/components/layout/Navbar";
 import FormTambahSoal from "./components/FormTambahSoal";
 import TabelHasilSiswa from "./components/TabelHasilSiswa";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
 import { fetchApi } from "@/lib/api";
@@ -15,6 +15,8 @@ export default function DashboardGuruPage() {
   const [daftarSoal, setDaftarSoal] = useState([]);
   const [loadingSoal, setLoadingSoal] = useState(true);
 
+  const [quizzes, setQuizzes] = useState([]);
+
   // State dynamic untuk rekap hasil pengerjaan siswa
   const [dataHasil, setDataHasil] = useState([]);
   const [loadingHasil, setLoadingHasil] = useState(true);
@@ -23,53 +25,56 @@ export default function DashboardGuruPage() {
   const userRole = String(user?.role || "").toUpperCase();
   const isGuru = userRole === "INSTRUCTOR" || userRole === "GURU";
 
+  const hasLoadedDashboard = useRef(false);
+
   // 1. Fungsi mengambil daftar soal dari backend
   const loadQuestions = useCallback(async () => {
     try {
       setLoadingSoal(true);
 
-      const quizzes = await fetchApi("/quizzes");
-      const quizList = Array.isArray(quizzes) ? quizzes : [];
+      // quiz-questions sekarang sudah membawa data quiz.title
+      // sehingga tidak perlu request /quizzes lagi.
+      const questionsData = await fetchApi("/quiz-questions");
 
-      let allQuestions = [];
+      const questions = Array.isArray(questionsData) ? questionsData : [];
 
-      for (const quiz of quizList) {
-        if (quiz?.id) {
-          try {
-            const qData = await fetchApi(`/quiz-questions/quiz/${quiz.id}`);
-            const questions = Array.isArray(qData) ? qData : [];
-
-            const formattedQuestions = questions.map((q) => ({
-              ...q,
-              quizTitle: quiz.title || quiz.course?.title || "Bank Soal",
-            }));
-
-            allQuestions = [...allQuestions, ...formattedQuestions];
-          } catch (qErr) {
-            console.warn(`Gagal fetch soal untuk quiz ${quiz.id}:`, qErr);
-          }
-        }
-      }
+      const allQuestions = questions.map((q) => ({
+        ...q,
+        quizTitle: q.quiz?.title || "Bank Soal",
+      }));
 
       setDaftarSoal(allQuestions);
     } catch (err) {
-      console.warn("Gagal mengambil kuis:", err);
+      console.warn("Gagal mengambil data bank soal:", err);
+      setDaftarSoal([]);
     } finally {
       setLoadingSoal(false);
     }
   }, []);
 
-  // 2. Fungsi mengambil rekap hasil ujian siswa (Diselaraskan persis dengan guru/hasil/page.jsx)
+  const loadQuizzes = useCallback(async () => {
+    try {
+      const quizData = await fetchApi("/quizzes");
+      setQuizzes(Array.isArray(quizData) ? quizData : []);
+    } catch (err) {
+      console.warn("Gagal mengambil daftar kuis:", err);
+      setQuizzes([]);
+    }
+  }, []);
+
+  // 2. Fungsi mengambil rekap hasil ujian siswa
   const loadResults = useCallback(async () => {
     try {
       setLoadingHasil(true);
 
-      // Gunakan satu sumber data utuh (/results) agar tidak terjadi data duplikat atau racikan status ganda
+      // Gunakan satu sumber data utuh (/results)
+      // agar tidak terjadi data duplikat atau racikan status ganda.
       const results = await fetchApi("/results").catch(() => []);
       const rawAllData = Array.isArray(results) ? results : [];
 
       const formattedResults = rawAllData.map((res, idx) => {
         const studentObj = res.student || res.user;
+
         const namaSiswa =
           studentObj?.name || res.studentName || res.userName || "Siswa";
 
@@ -85,9 +90,13 @@ export default function DashboardGuruPage() {
         const judulKuis =
           res.quiz?.title || res.quizTitle || res.title || "Bank Soal Evaluasi";
 
-        // AMBIL SCORE ASLI: null JANGAN di-fallback ke 0!
+        // Ambil score asli: null jangan di-fallback ke 0
         const rawScore =
-          res.score ?? res.nilai ?? res.scoreObtained ?? res.attempt?.score ?? null;
+          res.score ??
+          res.nilai ??
+          res.scoreObtained ??
+          res.attempt?.score ??
+          null;
 
         // Cek status pengerjaan dari attempt
         const statusAttempt =
@@ -109,12 +118,15 @@ export default function DashboardGuruPage() {
           nama: namaSiswa,
           mapel: namaMapel,
           judulKuis: judulKuis,
-          // Jika butuh evaluasi, nilai WAJIB null. Jika sudah dinilai, baru di-round.
+
+          // Jika butuh evaluasi, nilai wajib null.
+          // Jika sudah dinilai, baru di-round.
           nilai: needsEvaluation
             ? null
             : typeof rawScore === "number"
-            ? Math.round(rawScore)
-            : null,
+              ? Math.round(rawScore)
+              : null,
+
           statusAttempt: statusAttempt,
           needsEvaluation: needsEvaluation,
         };
@@ -140,6 +152,13 @@ export default function DashboardGuruPage() {
       return;
     }
 
+    if (hasLoadedDashboard.current) {
+      return;
+    }
+
+    hasLoadedDashboard.current = true;
+
+    loadQuizzes();
     loadQuestions();
     loadResults();
   }, [isAuthenticated, isGuru, router, loadQuestions, loadResults]);
@@ -156,21 +175,24 @@ export default function DashboardGuruPage() {
   // Hitung jumlah siswa UNIK untuk kartu statistik
   const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
 
-  // Rata-rata nilai (HANYA menghitung siswa yang SUDAH dinilai/bukan null)
+  // Rata-rata nilai
+  // HANYA menghitung siswa yang SUDAH dinilai / bukan null
   const dataSudahDinilai = dataHasil.filter(
-    (item) => !item.needsEvaluation && typeof item.nilai === "number"
+    (item) => !item.needsEvaluation && typeof item.nilai === "number",
   );
+
   const rataRataNilai =
     dataSudahDinilai.length > 0
       ? Math.round(
           dataSudahDinilai.reduce((acc, curr) => acc + curr.nilai, 0) /
-            dataSudahDinilai.length
+            dataSudahDinilai.length,
         )
       : 0;
 
   return (
     <>
       <Navbar />
+
       <div className="min-h-screen bg-base p-4 text-primary font-jakarta md:p-8">
         <div className="mx-auto max-w-6xl space-y-8">
           {/* Header Dashboard Guru */}
@@ -179,10 +201,12 @@ export default function DashboardGuruPage() {
               <h1 className="text-2xl font-extrabold text-primary md:text-3xl">
                 Dashboard <span className="text-brand">Guru</span>
               </h1>
+
               <p className="mt-1 text-sm text-secondary">
                 Kelola evaluasi, bank soal, dan pantau hasil ujian siswa SMK.
               </p>
             </div>
+
             <div>
               <span className="rounded-lg border border-brand-ring bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand">
                 Status: Pengajar
@@ -196,22 +220,27 @@ export default function DashboardGuruPage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 Total Soal Buatan
               </p>
+
               <h3 className="mt-1 text-2xl font-bold text-brand">
                 {daftarSoal.length} Soal
               </h3>
             </div>
+
             <div className="rounded-2xl border border-line bg-surface p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 Siswa Mengerjakan
               </p>
+
               <h3 className="mt-1 text-2xl font-bold text-primary">
                 {loadingHasil ? "..." : `${jumlahSiswaUnik} Siswa`}
               </h3>
             </div>
+
             <div className="rounded-2xl border border-line bg-surface p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 Rata-rata Nilai
               </p>
+
               <h3 className="mt-1 text-2xl font-bold text-av-amber">
                 {loadingHasil ? "..." : rataRataNilai}
               </h3>
@@ -221,7 +250,10 @@ export default function DashboardGuruPage() {
           {/* Section Utama: Form & Rekap Bank Soal */}
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
             <div className="lg:col-span-5">
-              <FormTambahSoal onTambahSoal={handleTambahSoal} />
+              <FormTambahSoal
+                onTambahSoal={handleTambahSoal}
+                quizzes={quizzes}
+              />
             </div>
 
             <div className="space-y-6 lg:col-span-7">
@@ -233,6 +265,7 @@ export default function DashboardGuruPage() {
                 <h3 className="text-md mb-3 font-bold text-primary">
                   Bank Soal Terakhir Ditambahkan
                 </h3>
+
                 <div className="space-y-2">
                   {loadingSoal ? (
                     <div className="py-4 text-center text-xs font-medium text-secondary">
@@ -260,6 +293,7 @@ export default function DashboardGuruPage() {
                             <span className="max-w-62.5 truncate font-medium md:max-w-[320px]">
                               {idx + 1}. {teksPertanyaan}
                             </span>
+
                             <span className="shrink-0 rounded border border-brand-ring bg-brand-soft px-2 py-0.5 font-semibold text-brand">
                               {namaPelajarannya}
                             </span>

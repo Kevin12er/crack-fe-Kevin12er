@@ -53,10 +53,18 @@ export function AuthProvider({ children }) {
     return login(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem(STORAGE_KEY);
-    setUser(null);
+  const logout = async () => {
+    try {
+      await fetchApi("/auth/logout", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Failed to logout from server:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem(STORAGE_KEY);
+      setUser(null);
+    }
   };
 
   const updateProfile = async ({ name, email }) => {
