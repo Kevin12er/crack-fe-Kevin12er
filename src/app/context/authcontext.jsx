@@ -35,12 +35,14 @@ export function AuthProvider({ children }) {
   }, [user, isHydrated]);
 
   const login = (userData) => {
+    const normalizedUser = userData?.user || userData || {};
+
     // Ambil role murni dari backend database (INSTRUCTOR / STUDENT)
-    const backendRole = String(userData?.role || "").toUpperCase();
+    const backendRole = String(normalizedUser?.role || "").toUpperCase();
     const isGuru = backendRole === "INSTRUCTOR";
 
     const nextUser = {
-      ...userData,
+      ...normalizedUser,
       role: isGuru ? "INSTRUCTOR" : "STUDENT",
       isAuthenticated: true,
     };

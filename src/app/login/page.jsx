@@ -32,9 +32,9 @@ export default function LoginPage() {
     const restoreGoogleSession = async () => {
       try {
         const response = await fetchApi("/auth/profile");
-        const userData = response?.user;
+        const userData = response?.user || response;
 
-        if (userData) {
+        if (userData && typeof userData === "object") {
           login(userData);
         }
       } catch {
@@ -84,7 +84,8 @@ export default function LoginPage() {
       // Jika backend tidak mengembalikan objek user lengkap saat login,
       // panggil GET /auth/profile untuk mengambil profil asli dari DB
       if (!userData || !userData.role) {
-        userData = await fetchApi("/auth/profile");
+        const profileResponse = await fetchApi("/auth/profile");
+        userData = profileResponse?.user || profileResponse;
       }
 
       // Simpan user ke AuthContext
@@ -97,7 +98,7 @@ export default function LoginPage() {
       // Validasi Kesesuaian Tab Pilihan UI dengan Role Asli Database
       if (tabRole === "guru" && !isInstructor) {
         throw new Error(
-          "Akun Anda terdaftar sebagai Siswa. Silakan pilih tab Siswa."
+          "Akun Anda terdaftar sebagai Siswa. Silakan pilih tab Siswa.",
         );
       }
 
@@ -115,7 +116,7 @@ export default function LoginPage() {
       }
     } catch (err) {
       setErrorMessage(
-        err.message || "Gagal masuk. Periksa kembali email dan password Anda."
+        err.message || "Gagal masuk. Periksa kembali email dan password Anda.",
       );
     }
   };
@@ -275,7 +276,6 @@ export default function LoginPage() {
                   d="M12 6.27c1.43 0 2.72.49 3.73 1.46l2.8-2.8C16.84 3.39 14.63 2.5 12 2.5a9.75 9.75 0 0 0-8.7 5.28l3.24 2.52C7.31 7.99 9.46 6.27 12 6.27a9.75 9.75 0 0 0-8.7 5.28l3.24 2.52C7.31 7.99 9.46 6.27 12 6.27z"
                 />
               </svg>
-
               Masuk dengan Google
             </button>
 
