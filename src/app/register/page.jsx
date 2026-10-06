@@ -1,6 +1,7 @@
 "use client";
 
 import Navbar from "@/app/components/layout/Navbar";
+import Footer from "../components/layout/Footer";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -271,6 +272,7 @@ export default function RegisterPage() {
           </div>
         </div>
       </section>
+      <Footer />
     </>
   );
 }
