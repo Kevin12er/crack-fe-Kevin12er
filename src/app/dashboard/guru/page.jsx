@@ -3,6 +3,7 @@
 import Navbar from "@/app/components/layout/Navbar";
 import FormTambahSoal from "./components/FormTambahSoal";
 import TabelHasilSiswa from "./components/TabelHasilSiswa";
+import SummaryStatsHasil from "./components/SummaryStatsHasil";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
@@ -62,15 +63,17 @@ export default function DashboardGuruPage() {
     }
   }, []);
 
-  // 2. Fungsi mengambil rekap hasil ujian siswa
+  // 2. Fungsi mengambil rekap hasil ujian siswa + stats
   const loadResults = useCallback(async () => {
     try {
       setLoadingHasil(true);
 
-      // Gunakan satu sumber data utuh (/results)
-      // agar tidak terjadi data duplikat atau racikan status ganda.
-      const results = await fetchApi("/results").catch(() => []);
-      const rawAllData = Array.isArray(results) ? results : [];
+      // Fetch recent 10 results untuk dashboard (opsional sort by pending first)
+      const results = await fetchApi("/results?limit=10&sort=recent").catch(
+        () => ({ data: [], total: 0, passed: 0, pending: 0 }),
+      );
+
+      const rawAllData = Array.isArray(results) ? results : results?.data || [];
 
       const formattedResults = rawAllData.map((res, idx) => {
         const studentObj = res.student || res.user;
@@ -118,6 +121,9 @@ export default function DashboardGuruPage() {
           nama: namaSiswa,
           mapel: namaMapel,
           judulKuis: judulKuis,
+          tanggal: res.createdAt
+            ? new Date(res.createdAt).toISOString().split("T")[0]
+            : "-",
 
           // Jika butuh evaluasi, nilai wajib null.
           // Jika sudah dinilai, baru di-round.
@@ -257,6 +263,9 @@ export default function DashboardGuruPage() {
             </div>
 
             <div className="space-y-6 lg:col-span-7">
+              {/* Summary Stats & Pending Section */}
+              <SummaryStatsHasil dataHasil={dataHasil} loading={loadingHasil} />
+
               {/* Tabel Hasil Pengerjaan Siswa */}
               <TabelHasilSiswa dataHasil={dataHasil} loading={loadingHasil} />
 
