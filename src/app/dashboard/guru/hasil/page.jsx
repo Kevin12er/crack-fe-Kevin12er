@@ -11,17 +11,40 @@ export default function HasilUjianGuruPage() {
   const [dataHasil, setDataHasil] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const pageSize = 20;
+
   const [selectedAttemptId, setSelectedAttemptId] = useState(null);
   const [detailAnswers, setDetailAnswers] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  const loadDataHasil = useCallback(async () => {
+  const loadDataHasil = useCallback(async (page = 1) => {
     try {
       setLoading(true);
 
-      // Satu sumber data saja (/results) supaya tidak duplikat
-      const results = await fetchApi("/results").catch(() => []);
-      const rawAllData = Array.isArray(results) ? results : [];
+      // Fetch dengan pagination dari backend
+      const endpoint = `/results?page=${page}&limit=${pageSize}`;
+      const response = await fetchApi(endpoint).catch(() => ({
+        data: [],
+        total: 0,
+        page: 1,
+        totalPages: 1,
+      }));
+
+      // Support dua format response:
+      // 1. { data: [], total: 100, page: 1, totalPages: 5 }
+      // 2. Array langsung (backward compatible)
+      const rawAllData = Array.isArray(response)
+        ? response
+        : response?.data || response?.results || [];
+
+      const total =
+        response?.total || response?.totalRecords || rawAllData.length;
+      const totalPagesCount =
+        response?.totalPages || Math.ceil(total / pageSize);
 
       const formatted = rawAllData.map((res, idx) => {
         const studentObj = res.student || res.user;
@@ -74,17 +97,22 @@ export default function HasilUjianGuruPage() {
       });
 
       setDataHasil(formatted);
+      setTotalRecords(total);
+      setTotalPages(totalPagesCount);
+      setCurrentPage(page);
     } catch (err) {
       console.error("Gagal mengambil rekap hasil:", err);
       setDataHasil([]);
+      setTotalRecords(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadDataHasil();
-  }, [loadDataHasil]);
+    loadDataHasil(currentPage);
+  }, [currentPage, loadDataHasil]);
 
   const handleOpenDetail = async (attemptId) => {
     if (!attemptId) {
@@ -102,30 +130,44 @@ export default function HasilUjianGuruPage() {
     } catch (err) {
       console.error("[ERROR DETAIL JAWABAN]:", err);
       alert(
-        `Gagal memuat detail jawaban: ${err.message || "Endpoint tidak merespon"}`
+        `Gagal memload detail jawaban: ${err.message || "Endpoint tidak merespon"}`,
       );
     } finally {
       setLoadingDetail(false);
     }
   };
 
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset ke page 1 saat search
+  };
+
+  const handleMapelChange = (value) => {
+    setSelectedMapel(value);
+    setCurrentPage(1); // Reset ke page 1 saat filter mapel
+  };
+
+  // Filter data di current page
   const hasilFiltered = dataHasil.filter((item) => {
     const matchNama = item.nama
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchMapel = selectedMapel === "Semua" || item.mapel === selectedMapel;
+    const matchMapel =
+      selectedMapel === "Semua" || item.mapel === selectedMapel;
     return matchNama && matchMapel;
   });
 
-  const jumlahSiswaUnik = new Set(dataHasil.map((item) => item.nama)).size;
-  const lulus = dataHasil.filter(
-    (s) => !s.needsEvaluation && s.nilai >= 75
+  // Stats hanya dari current page (note: untuk production, ambil dari backend)
+  const jumlahSiswaUnik = new Set(hasilFiltered.map((item) => item.nama)).size;
+  const lulus = hasilFiltered.filter(
+    (s) => !s.needsEvaluation && s.nilai >= 75,
   ).length;
-  const perluEvaluasi = dataHasil.filter((s) => s.needsEvaluation).length;
+  const perluEvaluasi = hasilFiltered.filter((s) => s.needsEvaluation).length;
 
+  // Opsi mapel dari current page
   const daftarOptionMapel = [
     "Semua",
-    ...Array.from(new Set(dataHasil.map((item) => item.mapel))),
+    ...Array.from(new Set(hasilFiltered.map((item) => item.mapel))),
   ];
 
   return (
@@ -191,14 +233,14 @@ export default function HasilUjianGuruPage() {
             type="text"
             placeholder="Cari nama siswa..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full sm:w-80 bg-base border border-line rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand"
           />
           <div className="flex items-center gap-2">
             <span className="text-xs text-secondary font-medium">Mapel:</span>
             <select
               value={selectedMapel}
-              onChange={(e) => setSelectedMapel(e.target.value)}
+              onChange={(e) => handleMapelChange(e.target.value)}
               className="bg-base border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand"
             >
               {daftarOptionMapel.map((m, idx) => (
@@ -295,6 +337,62 @@ export default function HasilUjianGuruPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-line">
+          <div className="text-xs text-secondary">
+            Halaman{" "}
+            <span className="font-bold text-primary">{currentPage}</span> dari{" "}
+            <span className="font-bold text-primary">{totalPages}</span> |
+            Total:{" "}
+            <span className="font-bold text-primary">{totalRecords}</span> hasil
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="rounded-lg bg-base border border-line px-3 py-1.5 text-xs font-semibold text-brand disabled:opacity-50 disabled:cursor-not-allowed hover:border-brand transition-all"
+            >
+              ← Sebelumnya
+            </button>
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all border ${
+                      currentPage === pageNum
+                        ? "bg-brand border-brand text-primary"
+                        : "bg-base border-line text-brand hover:border-brand"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
+              disabled={currentPage === totalPages}
+              className="rounded-lg bg-base border border-line px-3 py-1.5 text-xs font-semibold text-brand disabled:opacity-50 disabled:cursor-not-allowed hover:border-brand transition-all"
+            >
+              Selanjutnya →
+            </button>
           </div>
         </div>
       </div>
