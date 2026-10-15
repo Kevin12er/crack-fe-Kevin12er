@@ -4,6 +4,7 @@ import Navbar from "@/app/components/layout/Navbar";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function KelolaSoalPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,7 +16,7 @@ export default function KelolaSoalPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // State untuk kontrol Accordion (Kuis mana yang lagi terbuka/expanded)
+  // State Accordion
   const [openQuizIds, setOpenQuizIds] = useState([]);
 
   // State Form Buat Kuis Baru
@@ -38,6 +39,10 @@ export default function KelolaSoalPage() {
   // State Modal Edit Soal
   const [editingSoal, setEditingSoal] = useState(null);
 
+  // State Dialog Konfirmasi Hapus
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Load Data
   const loadData = useCallback(async () => {
     try {
@@ -59,13 +64,17 @@ export default function KelolaSoalPage() {
       for (const quiz of quizList) {
         if (quiz?.id) {
           try {
-            const qData = await fetchApi(`/quiz-questions/quiz/${quiz.id}`);
+            const qData = await fetchApi(
+              `/quiz-questions/quiz/${quiz.id}`,
+            );
+
             const questions = Array.isArray(qData) ? qData : [];
 
             const formatted = questions.map((q) => ({
               id: q.id,
               quizId: quiz.id,
-              pertanyaan: q.questionText || q.question || "Pertanyaan tanpa judul",
+              pertanyaan:
+                q.questionText || q.question || "Pertanyaan tanpa judul",
               mapel: quiz.title || quiz.course?.name || "Kuis Evaluasi",
               tipe: q.type || "Pilihan Ganda",
               kunci: q.correctAnswer || q.kunci || "Tersimpan di Opsi",
@@ -74,7 +83,10 @@ export default function KelolaSoalPage() {
 
             allQuestions = [...allQuestions, ...formatted];
           } catch (qErr) {
-            console.warn(`Gagal fetch soal untuk quiz ${quiz.id}:`, qErr);
+            console.warn(
+              `Gagal fetch soal untuk quiz ${quiz.id}:`,
+              qErr,
+            );
           }
         }
       }
@@ -82,6 +94,7 @@ export default function KelolaSoalPage() {
       setDaftarSoal(allQuestions);
     } catch (err) {
       console.error("Gagal mengambil data bank soal:", err);
+      toast.error("Gagal memuat bank soal: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -91,25 +104,27 @@ export default function KelolaSoalPage() {
     loadData();
   }, [loadData]);
 
-  // Toggle Buka/Tutup Accordion
+  // Toggle Accordion
   const toggleQuizAccordion = (quizId) => {
     setOpenQuizIds((prev) =>
       prev.includes(quizId)
         ? prev.filter((id) => id !== quizId)
-        : [...prev, quizId]
+        : [...prev, quizId],
     );
   };
 
   // Handler Buat Kuis Baru
   const handleCreateQuiz = async (e) => {
     e.preventDefault();
+
     if (!selectedCourseId || !quizTitle || !timeLimit) {
-      alert("Mohon isi Course, Judul Kuis, dan Batas Waktu!");
+      toast.error("Mohon isi Course, Judul Kuis, dan Batas Waktu!");
       return;
     }
 
     try {
       setIsSubmitting(true);
+
       await fetchApi("/quizzes", {
         method: "POST",
         body: JSON.stringify({
@@ -120,46 +135,35 @@ export default function KelolaSoalPage() {
         }),
       });
 
-      alert("Kuis berhasil dibuat!");
+      toast.success("Kuis berhasil dibuat!");
+
       setQuizTitle("");
       setQuizDescription("");
       setTimeLimit(15);
-      loadData();
+
+      await loadData();
     } catch (err) {
-      alert("Gagal membuat kuis: " + err.message);
+      toast.error("Gagal membuat kuis: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handler Hapus Kuis
-  const handleDeleteQuiz = async (quizId, quizTitle) => {
-    if (
-      !confirm(
-        `Apakah Anda yakin ingin menghapus kuis "${quizTitle}"?\n\nSemua soal di dalam kuis ini juga akan terhapus!`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await fetchApi(`/quizzes/${quizId}`, {
-        method: "DELETE",
-      });
-
-      alert("✅ Kuis beserta seluruh soal di dalamnya berhasil dihapus!");
-      loadData();
-    } catch (err) {
-      console.error("Gagal menghapus kuis:", err);
-      alert("Gagal menghapus kuis: " + err.message);
-    }
+  // Buka Dialog Hapus Kuis
+  const handleDeleteQuiz = (quizId, quizTitle) => {
+    setDeleteConfirmation({
+      type: "quiz",
+      id: quizId,
+      title: quizTitle,
+    });
   };
 
   // Handler Tambah Soal ke Kuis
   const handleAddQuestion = async (e) => {
     e.preventDefault();
+
     if (!questionText.trim()) {
-      alert("Isi teks pertanyaan terlebih dahulu!");
+      toast.error("Isi teks pertanyaan terlebih dahulu!");
       return;
     }
 
@@ -175,7 +179,10 @@ export default function KelolaSoalPage() {
         }),
       });
 
-      if (questionType === "MULTIPLE_CHOICE" && createdQuestion?.id) {
+      if (
+        questionType === "MULTIPLE_CHOICE" &&
+        createdQuestion?.id
+      ) {
         for (const opt of options) {
           if (opt.optionText.trim()) {
             await fetchApi("/quiz-options", {
@@ -190,11 +197,13 @@ export default function KelolaSoalPage() {
         }
       }
 
-      alert("✅ Soal berhasil ditambahkan!");
-      
-      // Auto-open accordion kuis yang baru ditambah soalnya
+      toast.success("Soal berhasil ditambahkan!");
+
       if (!openQuizIds.includes(activeQuizForQuestion.id)) {
-        setOpenQuizIds((prev) => [...prev, activeQuizForQuestion.id]);
+        setOpenQuizIds((prev) => [
+          ...prev,
+          activeQuizForQuestion.id,
+        ]);
       }
 
       setActiveQuizForQuestion(null);
@@ -205,50 +214,86 @@ export default function KelolaSoalPage() {
         { optionText: "", isCorrect: false },
         { optionText: "", isCorrect: false },
       ]);
-      loadData();
+
+      await loadData();
     } catch (err) {
-      alert("Gagal menambahkan soal: " + err.message);
+      toast.error("Gagal menambahkan soal: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handler Hapus Soal
-  const handleDeleteQuestion = async (questionId) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus soal ini?")) return;
+  // Buka Dialog Hapus Soal
+  const handleDeleteQuestion = (questionId) => {
+    setDeleteConfirmation({
+      type: "question",
+      id: questionId,
+      title: "soal ini",
+    });
+  };
+
+  // Jalankan Penghapusan Setelah Konfirmasi
+  const confirmDelete = async () => {
+    if (!deleteConfirmation || isDeleting) return;
+
+    const { type, id, title } = deleteConfirmation;
 
     try {
-      await fetchApi(`/quiz-questions/${questionId}`, {
-        method: "DELETE",
-      });
+      setIsDeleting(true);
 
-      alert("✅ Soal berhasil dihapus!");
-      loadData();
+      if (type === "quiz") {
+        await fetchApi(`/quizzes/${id}`, {
+          method: "DELETE",
+        });
+
+        toast.success(
+          "Kuis beserta seluruh soal di dalamnya berhasil dihapus!",
+        );
+      } else {
+        await fetchApi(`/quiz-questions/${id}`, {
+          method: "DELETE",
+        });
+
+        toast.success("Soal berhasil dihapus!");
+      }
+
+      setDeleteConfirmation(null);
+      await loadData();
     } catch (err) {
-      console.error("Detail error hapus soal:", err);
-      alert("Gagal menghapus soal: " + err.message);
+      console.error(`Gagal menghapus ${title}:`, err);
+      toast.error(`Gagal menghapus ${title}: ${err.message}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   // Handler Simpan Edit Soal
   const handleSaveEdit = (e) => {
     e.preventDefault();
+
     setDaftarSoal((prev) =>
-      prev.map((soal) => (soal.id === editingSoal.id ? editingSoal : soal))
+      prev.map((soal) =>
+        soal.id === editingSoal.id ? editingSoal : soal,
+      ),
     );
+
     setEditingSoal(null);
+    toast.success("Perubahan soal disimpan pada tampilan.");
   };
 
-  // Filter Kuis berdasarkan Dropdown Filter
+  // Filter Kuis
   const quizzesFiltered = daftarQuizzes.filter((q) => {
-    const matchMapel =
-      selectedMapel === "Semua" || q.title === selectedMapel || q.course?.name === selectedMapel;
-    return matchMapel;
+    return (
+      selectedMapel === "Semua" ||
+      q.title === selectedMapel ||
+      q.course?.name === selectedMapel
+    );
   });
 
   return (
     <>
       <Navbar />
+
       <div className="min-h-screen bg-base text-primary font-jakarta p-4 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
           <Link
@@ -265,9 +310,11 @@ export default function KelolaSoalPage() {
                 Kelola <span className="text-brand">Kuis & Bank Soal</span>
               </h1>
               <p className="text-sm text-secondary mt-1">
-                Susun materi evaluasi, set durasi timer, dan kelola kelengkapan soal.
+                Susun materi evaluasi, set durasi timer, dan kelola
+                kelengkapan soal.
               </p>
             </div>
+
             <div className="flex items-center gap-2">
               <span className="text-xs bg-brand-soft text-brand border border-brand-ring px-3 py-1.5 rounded-lg font-semibold">
                 Total Kuis: {daftarQuizzes.length}
@@ -281,6 +328,7 @@ export default function KelolaSoalPage() {
           {/* FORM BUAT KUIS BARU */}
           <div className="bg-surface border border-line rounded-2xl p-6 space-y-4 shadow-sm">
             <h2 className="font-bold text-primary">➕ Buat Kuis Baru</h2>
+
             <form onSubmit={handleCreateQuiz} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -364,8 +412,11 @@ export default function KelolaSoalPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full sm:w-80 bg-base border border-line rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand"
             />
+
             <div className="flex items-center gap-2">
-              <span className="text-xs text-secondary font-medium">Filter Kuis:</span>
+              <span className="text-xs text-secondary font-medium">
+                Filter Kuis:
+              </span>
               <select
                 value={selectedMapel}
                 onChange={(e) => setSelectedMapel(e.target.value)}
@@ -381,7 +432,7 @@ export default function KelolaSoalPage() {
             </div>
           </div>
 
-          {/* DAFTAR KUIS & SOAL DALAM BENTUK ACCORDION */}
+          {/* DAFTAR KUIS & SOAL */}
           <div className="space-y-4">
             <h2 className="font-bold text-primary text-lg">
               Daftar Kuis & Bank Soal
@@ -393,13 +444,12 @@ export default function KelolaSoalPage() {
               </div>
             ) : quizzesFiltered.length > 0 ? (
               quizzesFiltered.map((quiz) => {
-                // Ambil soal yang termasuk dalam kuis ini
                 const quizQuestions = daftarSoal.filter(
                   (s) =>
                     s.quizId === quiz.id &&
                     String(s.pertanyaan || "")
                       .toLowerCase()
-                      .includes(searchTerm.toLowerCase())
+                      .includes(searchTerm.toLowerCase()),
                 );
 
                 const isOpen = openQuizIds.includes(quiz.id);
@@ -409,7 +459,6 @@ export default function KelolaSoalPage() {
                     key={quiz.id}
                     className="bg-surface border border-line rounded-2xl overflow-hidden transition-all shadow-sm"
                   >
-                    {/* Header Accordion Kuis */}
                     <div className="p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-surface hover:bg-base/40 transition-colors">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
@@ -420,6 +469,7 @@ export default function KelolaSoalPage() {
                             {quizQuestions.length} Soal
                           </span>
                         </div>
+
                         <h3 className="font-bold text-primary">
                           {quiz.title}
                         </h3>
@@ -428,7 +478,6 @@ export default function KelolaSoalPage() {
                         </p>
                       </div>
 
-                      {/* Tombol Aksi Kuis */}
                       <div className="flex items-center gap-2 self-end md:self-center">
                         <button
                           onClick={() => setActiveQuizForQuestion(quiz)}
@@ -436,6 +485,7 @@ export default function KelolaSoalPage() {
                         >
                           + Tambah Soal
                         </button>
+
                         <button
                           onClick={() => handleDeleteQuiz(quiz.id, quiz.title)}
                           className="p-1.5 text-xs font-bold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all cursor-pointer"
@@ -443,6 +493,7 @@ export default function KelolaSoalPage() {
                         >
                           🗑️
                         </button>
+
                         <button
                           onClick={() => toggleQuizAccordion(quiz.id)}
                           className="px-3 py-1.5 text-xs font-bold bg-base border border-line hover:border-brand rounded-xl text-primary transition-all cursor-pointer flex items-center gap-1"
@@ -452,7 +503,6 @@ export default function KelolaSoalPage() {
                       </div>
                     </div>
 
-                    {/* Body Accordion: Daftar Soal Kuis ini */}
                     {isOpen && (
                       <div className="border-t border-line bg-base/50 p-4 space-y-3">
                         {quizQuestions.length > 0 ? (
@@ -467,11 +517,15 @@ export default function KelolaSoalPage() {
                                     {item.tipe}
                                   </span>
                                 </div>
+
                                 <h4 className="text-xs md:text-sm font-semibold text-primary">
                                   {index + 1}. {item.pertanyaan}
                                 </h4>
+
                                 <p className="text-xs text-secondary">
-                                  <strong className="text-primary">Kunci:</strong>{" "}
+                                  <strong className="text-primary">
+                                    Kunci:
+                                  </strong>{" "}
                                   <span className="text-brand font-medium">
                                     {item.kunci}
                                   </span>
@@ -485,6 +539,7 @@ export default function KelolaSoalPage() {
                                 >
                                   Edit
                                 </button>
+
                                 <button
                                   onClick={() => handleDeleteQuestion(item.id)}
                                   className="px-2.5 py-1 text-xs font-semibold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-colors cursor-pointer"
@@ -496,7 +551,8 @@ export default function KelolaSoalPage() {
                           ))
                         ) : (
                           <div className="text-center py-4 text-xs text-secondary italic">
-                            Belum ada soal di kuis ini. Klik "+ Tambah Soal" di atas untuk menambahkan.
+                            Belum ada soal di kuis ini. Klik "+ Tambah Soal"
+                            di atas untuk menambahkan.
                           </div>
                         )}
                       </div>
@@ -524,6 +580,7 @@ export default function KelolaSoalPage() {
                   {activeQuizForQuestion.title}
                 </p>
               </div>
+
               <button
                 onClick={() => setActiveQuizForQuestion(null)}
                 className="text-xs text-secondary hover:text-primary cursor-pointer"
@@ -575,11 +632,15 @@ export default function KelolaSoalPage() {
                         checked={opt.isCorrect}
                         onChange={() =>
                           setOptions(
-                            options.map((o, i) => ({ ...o, isCorrect: i === idx }))
+                            options.map((o, i) => ({
+                              ...o,
+                              isCorrect: i === idx,
+                            })),
                           )
                         }
                         className="accent-brand h-4 w-4 cursor-pointer"
                       />
+
                       <input
                         type="text"
                         placeholder={`Pilihan ${String.fromCharCode(65 + idx)}`}
@@ -605,10 +666,11 @@ export default function KelolaSoalPage() {
                 >
                   Batal
                 </button>
+
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-primary hover:bg-brand-hover cursor-pointer"
+                  className="rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-primary hover:bg-brand-hover cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? "Menyimpan..." : "Simpan Soal"}
                 </button>
@@ -623,6 +685,7 @@ export default function KelolaSoalPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-surface border border-line p-6 rounded-2xl max-w-lg w-full space-y-4">
             <h2 className="text-lg font-bold text-primary">Edit Soal</h2>
+
             <form onSubmit={handleSaveEdit} className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-secondary uppercase mb-1">
@@ -632,7 +695,10 @@ export default function KelolaSoalPage() {
                   type="text"
                   value={editingSoal.mapel}
                   onChange={(e) =>
-                    setEditingSoal({ ...editingSoal, mapel: e.target.value })
+                    setEditingSoal({
+                      ...editingSoal,
+                      mapel: e.target.value,
+                    })
                   }
                   className="w-full bg-base border border-line rounded-xl p-2.5 text-sm"
                   required
@@ -665,7 +731,10 @@ export default function KelolaSoalPage() {
                   type="text"
                   value={editingSoal.kunci}
                   onChange={(e) =>
-                    setEditingSoal({ ...editingSoal, kunci: e.target.value })
+                    setEditingSoal({
+                      ...editingSoal,
+                      kunci: e.target.value,
+                    })
                   }
                   className="w-full bg-base border border-line rounded-xl p-2.5 text-sm"
                   required
@@ -680,6 +749,7 @@ export default function KelolaSoalPage() {
                 >
                   Batal
                 </button>
+
                 <button
                   type="submit"
                   className="rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-primary hover:bg-brand-hover"
@@ -688,6 +758,64 @@ export default function KelolaSoalPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI HAPUS */}
+      {deleteConfirmation && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !isDeleting) {
+              setDeleteConfirmation(null);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-dialog-title"
+            className="bg-surface border border-line p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl"
+          >
+            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-red-500/10 text-red-400 text-xl">
+              🗑️
+            </div>
+
+            <div>
+              <h3
+                id="delete-dialog-title"
+                className="text-lg font-bold text-primary"
+              >
+                Konfirmasi Penghapusan
+              </h3>
+
+              <p className="text-sm text-secondary mt-2">
+                {deleteConfirmation.type === "quiz"
+                  ? `Yakin ingin menghapus kuis "${deleteConfirmation.title}"? Semua soal di dalam kuis ini juga akan terhapus!`
+                  : "Apakah kamu yakin ingin menghapus soal ini?"}
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeleteConfirmation(null)}
+                className="px-4 py-2 text-xs font-semibold bg-base border border-line rounded-xl disabled:opacity-50"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDelete}
+                className="px-4 py-2 text-xs font-semibold bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50"
+              >
+                {isDeleting ? "Menghapus..." : "Ya, Hapus"}
+              </button>
+            </div>
           </div>
         </div>
       )}

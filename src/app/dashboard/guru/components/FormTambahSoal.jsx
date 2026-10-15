@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function FormTambahSoal({
   onTambahSoal,
@@ -72,7 +73,7 @@ export default function FormTambahSoal({
 
   const onSubmit = async (data) => {
     if (!selectedQuizId) {
-      alert(
+      toast.error(
         "Pilih kuis terlebih dahulu. Buat kuis di menu Kelola Soal jika belum ada.",
       );
       return;
@@ -126,7 +127,7 @@ export default function FormTambahSoal({
         }
       }
 
-      alert("Soal berhasil disimpan ke database!");
+      toast.success("Soal berhasil disimpan ke database!");
 
       if (onTambahSoal) {
         onTambahSoal({
@@ -139,7 +140,7 @@ export default function FormTambahSoal({
       // Reset hanya isi form; pilihan course & kuis dipertahankan
       reset();
     } catch (err) {
-      alert(
+      toast.error(
         "Gagal menyimpan soal: " +
           (err.message || "Terjadi kesalahan server."),
       );
