@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { fetchApi } from "@/lib/api";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function DetailMateriGuruPage({ params }) {
   const resolvedParams = use(params);
@@ -91,7 +92,7 @@ export default function DetailMateriGuruPage({ params }) {
       setFormData({ title: "", content: "" });
       loadData();
     } catch (err) {
-      alert(err.message || "Gagal menyimpan modul.");
+      toast.error(err.message || "Gagal menyimpan modul.");
     } finally {
       setSubmitting(false);
     }
@@ -105,7 +106,7 @@ export default function DetailMateriGuruPage({ params }) {
       await fetchApi(`/materials/${materialId}`, { method: "DELETE" });
       loadData();
     } catch (err) {
-      alert(err.message || "Gagal menghapus modul.");
+      toast.error(err.message || "Gagal menghapus modul.");
     }
   };
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
+import { toast } from "sonner";
 
 export default function PengaturanPage() {
   const router = useRouter();
@@ -47,9 +48,9 @@ export default function PengaturanPage() {
         email: email,
       });
 
-      alert("Profil berhasil diperbarui.");
+      toast.success("Profil berhasil diperbarui.");
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   };
 
@@ -177,7 +178,7 @@ export default function PengaturanPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    alert(
+                    toast.info(
                       "Fitur ganti password akan dihubungkan ke endpoint backend.",
                     )
                   }

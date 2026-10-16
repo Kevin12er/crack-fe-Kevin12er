@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function HasilUjianGuruPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -116,7 +117,7 @@ export default function HasilUjianGuruPage() {
 
   const handleOpenDetail = async (attemptId) => {
     if (!attemptId) {
-      alert("ID Attempt tidak ditemukan pada baris data ini.");
+      toast.error("ID Attempt tidak ditemukan pada baris data ini.");
       return;
     }
 
@@ -129,7 +130,7 @@ export default function HasilUjianGuruPage() {
       setDetailAnswers(res);
     } catch (err) {
       console.error("[ERROR DETAIL JAWABAN]:", err);
-      alert(
+      toast.error(
         `Gagal memload detail jawaban: ${err.message || "Endpoint tidak merespon"}`,
       );
     } finally {
@@ -193,7 +194,7 @@ export default function HasilUjianGuruPage() {
           </div>
           <button
             onClick={() =>
-              alert("Fitur unduh laporan PDF/Excel siap diintegrasikan!")
+              toast.info("Fitur unduh laporan PDF/Excel siap diintegrasikan!")
             }
             className="w-fit cursor-pointer rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-primary shadow-md transition-colors hover:bg-brand-hover"
           >

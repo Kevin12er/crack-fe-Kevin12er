@@ -4,6 +4,7 @@ import { use, useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import Navbar from "@/app/components/layout/Navbar";
 import { fetchApi } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function KerjakanKuisPage({ params }) {
   const resolvedParams = use(params);
@@ -77,7 +78,7 @@ export default function KerjakanKuisPage({ params }) {
       setSubmitted(true);
     } catch (err) {
       console.error("Gagal menyimpan kuis:", err);
-      alert("Terjadi kesalahan saat mengirim jawaban: " + err.message);
+      toast.error("Terjadi kesalahan saat mengirim jawaban: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -137,7 +138,11 @@ export default function KerjakanKuisPage({ params }) {
     if (!isStarted || timeLeft === null || submitted || loading || error) return;
 
     if (timeLeft <= 0) {
-      alert("⏱️ Waktu pengerjaan kuis telah habis! Jawaban Anda akan otomatis dikirim.");
+      toast.warning('Waktu habis ⏱️, Jawaban anda otomatis dikirim', {
+        position: "top-center",
+        autoClose: 5000,
+        closeOnClick: false
+      })
       handleSubmitQuiz();
       return;
     }

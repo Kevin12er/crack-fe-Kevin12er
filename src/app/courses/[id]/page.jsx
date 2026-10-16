@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/layout/Navbar";
 import { useAuth } from "@/app/context/authcontext";
 import { fetchApi } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function CourseDetailPage({ params }) {
   // Unwrap params untuk Next.js App Router
@@ -50,7 +51,7 @@ export default function CourseDetailPage({ params }) {
     // 2. Jika Login Sebagai Guru -> Tampilkan Peringatan
     const isInstructor = String(user?.role || "").toUpperCase() === "INSTRUCTOR";
     if (isInstructor) {
-      alert("Akun Instructor/Guru tidak perlu mendaftar ke kelas.");
+      toast.error("Akun Instructor/Guru tidak perlu mendaftar ke kelas.");
       return;
     }
 
@@ -66,7 +67,7 @@ export default function CourseDetailPage({ params }) {
         router.push("/dashboard/siswa");
       }, 1500);
     } catch (err) {
-      alert(err.message || "Gagal mendaftar kelas. Kamu mungkin sudah terdaftar.");
+      toast.error(err.message || "Gagal mendaftar kelas. Kamu mungkin sudah terdaftar.");
     } finally {
       setEnrolling(false);
     }

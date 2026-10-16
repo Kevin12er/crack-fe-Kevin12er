@@ -765,7 +765,7 @@ export default function KelolaSoalPage() {
       {/* MODAL KONFIRMASI HAPUS */}
       {deleteConfirmation && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-60"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget && !isDeleting) {
               setDeleteConfirmation(null);
